@@ -20,3 +20,4 @@ Questions
 
 * Handling consensus?
 * How to keep track of node status?
+* Could the DECODE website could host a directory?
