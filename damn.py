@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # See LICENSE file for copyright and license details.
 
-from os.path import isfile
+from os.path import isfile, join
 from getpass import getpass
 from stem.control import Controller
 import simplejson as json
@@ -69,12 +69,18 @@ def main():
         'message': message,
         'signature': sign,
     }]
-    # resp = requests.post('http://qzhpi3jsbuvndnaw.onion/post',
-    resp = requests.post('http://localhost:49371/post',
-                         data=json.dumps(payload),
-                         headers={'Content-Type': 'application/json'},
-                         # proxies={'http': 'socks5://127.0.0.1:9050'}
-                        )
+
+    directories = [
+        'http://localhost:49371',
+        'http://qzhpi3jsbuvndnaw.onion',
+    ]
+
+    for i in directories:
+        if i.endswith('.onion'):
+            prx = {'http': 'socks5h://127.0.0.1:9050'}
+        resp = requests.post(join(i, 'post'), data=json.dumps(payload),
+                             headers={'Content-Type': 'application/json'},
+                             proxies=prx)
 
     input('Press Enter to exit.')
     return
