@@ -30,12 +30,15 @@ known and active DECODE directory with the format explained below.
   of this same hidden service.
 * `signature` is the base64 encoded signature of the above message.
 
-	{
-	  "type": "node",
-	  "address": "qzhpi3jsbuvndnaw.onion",
-	  "message": "I am a DECODE node!",
-	  "signature": "ACkwtGGedX1ibHnlwtHlgJYndEMu0HhJaK3DLnH1B+r8/xx7jNDerOU7zrZVuzvf5mH9aZyHAOSHleaD52CsbT3lZrsrVWh4sVsJCD9VbEKuuPV/hx+T8f385V5dv2nDvBtJP32eQhwAxKz8YQvBjQOX8Y/o13vq+bxnxLd1j7g="
-	}
+
+```
+{
+  "type": "node",
+  "address": "qzhpi3jsbuvndnaw.onion",
+  "message": "I am a DECODE node!",
+  "signature": "ACkwtGGedX1ibHnlwtHlgJYndEMu0HhJaK3DLnH1B+r8/xx7jNDerOU7zrZVuzvf5mH9aZyHAOSHleaD52CsbT3lZrsrVWh4sVsJCD9VbEKuuPV/hx+T8f385V5dv2nDvBtJP32eQhwAxKz8YQvBjQOX8Y/o13vq+bxnxLd1j7g="
+}
+```
 
 Sending this as a POST request to a directory will make the directory
 ask for the public key of the given address from a HSDir in the Tor
@@ -46,15 +49,19 @@ is in possession of the private key.
 Once validated, the directory will append to the JSON struct, which will
 result in the following:
 
-	{
-	  "type": "node",
-	  "address": "qzhpi3jsbuvndnaw.onion",
-	  "message": "I am a DECODE node!",
-	  "signature": "ACkwtGGedX1ibHnlwtHlgJYndEMu0HhJaK3DLnH1B+r8/xx7jNDerOU7zrZVuzvf5mH9aZyHAOSHleaD52CsbT3lZrsrVWh4sVsJCD9VbEKuuPV/hx+T8f385V5dv2nDvBtJP32eQhwAxKz8YQvBjQOX8Y/o13vq+bxnxLd1j7g=",
-	  "firstseen": 1511577084,
-	  "lastseen": 1511577084,
-	  "publickey": "-----BEGIN RSA PUBLIC KEY-----\nMIGJAoGBALrCIYHP38IEJXJAKhbVz/G6Q/OKTkKOfWXg1IlSRUtUKr+6pVMIRXni\ndeluaVRyCPkHA1g2o/MTHxVAgZspbUkTMYGrUYV0TOdcsbD29tPTXCmy5ZxyjsvO\nd7b3dxadT+9621q2H8/XYvHGWYZnnvyZgndjFsI/vBx9GYW8ial9AgMBAAE=\n-----END RSA PUBLIC KEY-----"
-	}
+
+```
+{
+  "type": "node",
+  "address": "qzhpi3jsbuvndnaw.onion",
+  "message": "I am a DECODE node!",
+  "signature": "ACkwtGGedX1ibHnlwtHlgJYndEMu0HhJaK3DLnH1B+r8/xx7jNDerOU7zrZVuzvf5mH9aZyHAOSHleaD52CsbT3lZrsrVWh4sVsJCD9VbEKuuPV/hx+T8f385V5dv2nDvBtJP32eQhwAxKz8YQvBjQOX8Y/o13vq+bxnxLd1j7g=",
+  "firstseen": 1511577084,
+  "lastseen": 1511577084,
+  "publickey": "-----BEGIN RSA PUBLIC KEY-----\nMIGJAoGBALrCIYHP38IEJXJAKhbVz/G6Q/OKTkKOfWXg1IlSRUtUKr+6pVMIRXni\ndeluaVRyCPkHA1g2o/MTHxVAgZspbUkTMYGrUYV0TOdcsbD29tPTXCmy5ZxyjsvO\nd7b3dxadT+9621q2H8/XYvHGWYZnnvyZgndjFsI/vBx9GYW8ial9AgMBAAE=\n-----END RSA PUBLIC KEY-----"
+}
+```
+
 
 The directory will then save this locally on the machine, and propagate
 it through the network of nodes/directories further on.
