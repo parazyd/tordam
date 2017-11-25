@@ -76,6 +76,7 @@ def main():
     ]
 
     for i in directories:
+        prx = None
         if i.endswith('.onion'):
             prx = {'http': 'socks5h://127.0.0.1:9050'}
         resp = requests.post(join(i, 'post'), data=json.dumps(payload),
