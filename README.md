@@ -1,5 +1,5 @@
-Tor-DECODE announce mechanism for nodes (Tor-DAMN)
-==================================================
+Tor-DECODE announce mechanism (Tor-DAM)
+=======================================
 
 Short PoC of finding DECODE nodes in the Tor network.
 
@@ -75,3 +75,5 @@ Questions and concerns
 * How to keep track of node status?
 * Could the DECODE website could host a list of ultimately-trusted
   nodes/directories?
+* A node should be verified once it announces itself.
+* Do we POST back all the nodes we know back to the announcer?

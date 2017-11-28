@@ -72,7 +72,7 @@ def main():
 
     directories = [
         'http://localhost:49371',
-        'http://qzhpi3jsbuvndnaw.onion',
+        'http://6ci7kr2gidoraxkg.onion',
     ]
 
     for i in directories:
