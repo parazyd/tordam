@@ -59,7 +59,8 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	pubkey, err := lib.ParsePubkey(pkey)
 	lib.CheckError(err)
 
-	if len(req["secret"]) != 64 {
+	if len(req["secret"]) != 88 {
+		// Client did not send a decrypted secret.
 		randString, err := lib.GenRandomASCII(64)
 		lib.CheckError(err)
 
@@ -80,6 +81,30 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		rw.WriteHeader(http.StatusOK)
 		rw.Write(jsonVal)
 		return
+	}
+
+	if len(req["secret"]) == 88 {
+		// Client sent a decrypted secret.
+		decodedSec, err := base64.StdEncoding.DecodeString(req["secret"])
+		lib.CheckError(err)
+
+		// TODO: validate against state
+		var correct = true
+
+		log.Println(string(decodedSec))
+
+		if correct {
+			ret := map[string]string{
+				"secret": "Welcome to the DECODE network!",
+			}
+			jsonVal, err := json.Marshal(ret)
+			lib.CheckError(err)
+
+			rw.Header().Set("Content-Type", "application/json")
+			rw.WriteHeader(http.StatusOK)
+			rw.Write(jsonVal)
+			return
+		}
 	}
 }
 

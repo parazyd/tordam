@@ -78,6 +78,24 @@ func main() {
 		decrypted, err := lib.DecryptMsg([]byte(decodedSecret), key)
 		lib.CheckError(err)
 
-		log.Println(string(decrypted))
+		decryptedEncode := base64.StdEncoding.EncodeToString(decrypted)
+
+		vals["secret"] = decryptedEncode
+		jsonVal, err := json.Marshal(vals)
+		lib.CheckError(err)
+
+		log.Println("Sending back decrypted secret.")
+		resp = lib.HTTPPost("http://localhost:8080/announce", jsonVal)
+		decoder = json.NewDecoder(resp.Body)
+		err = decoder.Decode(&m)
+		lib.CheckError(err)
+
+		if resp.StatusCode == 200 {
+			log.Println("Successfully authenticated!")
+			log.Println("Server replied:", m.Secret)
+		} else {
+			log.Println("Unsuccessful reply from directory.")
+			log.Fatalln("Server replied:", m.Secret)
+		}
 	}
 }
