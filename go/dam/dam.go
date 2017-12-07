@@ -14,13 +14,13 @@ import (
 )
 
 // Bits hold the size of our RSA private key. Tor standard is 1024.
-var Bits = 1024
+const Bits = 1024
 
 // Privpath holds the path of where our private key is.
-var Privpath = "private.key"
+const Privpath = "private.key"
 
 // Pubpath holds the path of where our public key is.
-var Pubpath = "public.key"
+const Pubpath = "public.key"
 
 func main() {
 	if _, err := os.Stat("private.key"); os.IsNotExist(err) {
