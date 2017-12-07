@@ -69,4 +69,15 @@ func main() {
 		log.Println("Unsuccessful reply from directory.")
 		log.Fatalln("Server replied:", m.Secret)
 	}
+
+	if resp.StatusCode == 200 {
+		log.Println("Successful reply from directory.")
+		decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
+		lib.CheckError(err)
+
+		decrypted, err := lib.DecryptMsg([]byte(decodedSecret), key)
+		lib.CheckError(err)
+
+		log.Println(string(decrypted))
+	}
 }

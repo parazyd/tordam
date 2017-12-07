@@ -93,11 +93,24 @@ func SignMsg(message []byte, privkey *rsa.PrivateKey) []byte {
 }
 
 // EncryptMsg encrypts a given []byte message using a given RSA public key.
+// Returns the encrypted message in []byte form.
 func EncryptMsg(message []byte, pubkey *rsa.PublicKey) ([]byte, error) {
 	log.Println("Encrypting message...")
 	rng := rand.Reader
 
 	msg, err := rsa.EncryptPKCS1v15(rng, pubkey, message)
+	CheckError(err)
+
+	return msg, nil
+}
+
+// DecryptMsg decrypts a given []byte message using a given RSA private key.
+// Returns the decrypted message in []byte form.
+func DecryptMsg(message []byte, privkey *rsa.PrivateKey) ([]byte, error) {
+	log.Println("Decrypting message...")
+	rng := rand.Reader
+
+	msg, err := rsa.DecryptPKCS1v15(rng, privkey, message)
 	CheckError(err)
 
 	return msg, nil
