@@ -92,30 +92,24 @@ func SignMsg(message []byte, privkey *rsa.PrivateKey) []byte {
 	return sig
 }
 
-// VerifyMsg verifies a []byte message and []byte signature against a given
-// []byte RSA pubkey.
-func VerifyMsg(message []byte, signature []byte, pubkey []byte) (bool, error) {
-	log.Println("Verifying message signature")
+// EncryptMsg encrypts a given []byte message using a given RSA public key.
+func EncryptMsg(message []byte, pubkey *rsa.PublicKey) ([]byte, error) {
+	log.Println("Encrypting message...")
+	rng := rand.Reader
 
-	block, _ := pem.Decode(pubkey)
-	if block == nil {
-		return false, errors.New("failed to parse PEM block containing the key")
-	}
-
-	// FIXME: Golang bug. Reported at: https://github.com/golang/go/issues/23032
-	pkey, err := x509.ParsePKIXPublicKey(block.Bytes)
+	msg, err := rsa.EncryptPKCS1v15(rng, pubkey, message)
 	CheckError(err)
 
-	switch pkey := pkey.(type) {
-	case *rsa.PublicKey:
-		log.Println("Valid RSA key parsed.")
-	default:
-		log.Fatalln("Public key is not of type RSA! It is: ", pkey)
-		return false, err
-	}
+	return msg, nil
+}
+
+// VerifyMsg verifies a []byte message and []byte signature against a given
+// RSA pubkey.
+func VerifyMsg(message []byte, signature []byte, pubkey *rsa.PublicKey) (bool, error) {
+	log.Println("Verifying message signature")
 
 	hashed := sha512.Sum512(message)
-	ver := rsa.VerifyPKCS1v15(pkey.(*rsa.PublicKey), crypto.SHA512, hashed[:], signature)
+	ver := rsa.VerifyPKCS1v15(pubkey, crypto.SHA512, hashed[:], signature)
 	if ver != nil {
 		log.Println("Signature invalid")
 		return false, nil
@@ -137,4 +131,24 @@ func OnionFromPubkey(pubkey rsa.PublicKey) string {
 	encoded := strings.ToLower(base32.StdEncoding.EncodeToString(hashed.Sum(nil)))[:16]
 
 	return encoded + ".onion"
+}
+
+// ParsePubkey parses a []byte form of a RSA public key and returns the proper
+// type.
+func ParsePubkey(pubkey []byte) (*rsa.PublicKey, error) {
+	block, _ := pem.Decode(pubkey)
+	if block == nil {
+		return nil, errors.New("Failed to parse PEM block containing the public key.")
+	}
+
+	// FIXME: Golang bug. Reported at: https://github.com/golang/go/issues/23032
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	CheckError(err)
+
+	switch pub := pub.(type) {
+	case *rsa.PublicKey:
+		return pub, nil
+	default:
+		return nil, errors.New("Invalid type of public key")
+	}
 }
