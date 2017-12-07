@@ -51,17 +51,17 @@ func FetchHSPubkey(addr string) string {
 }
 
 // ValidateReq validates our given request against some checks.
-func ValidateReq(req map[string]string) bool {
+func ValidateReq(req map[string]string) ([]byte, bool) {
 	// Validate nodetype.
 	if req["nodetype"] != "node" {
-		return false
+		return nil, false
 	}
 
 	// Validate address.
 	re, err := regexp.Compile("^[a-z2-7]{16}\\.onion$")
 	CheckError(err)
 	if len(re.FindString(req["address"])) != 22 {
-		return false
+		return nil, false
 	}
 
 	// Address is valid, we try to fetch its pubkey from a HSDir
@@ -92,7 +92,7 @@ func ValidateReq(req map[string]string) bool {
 			}
 	*/
 
-	return true
+	return []byte(pubkey), true
 }
 
 // HTTPPost sends an HTTP POST request to the given host. It sends data as
