@@ -21,6 +21,9 @@ const Privpath = "private.key"
 // Pubpath holds the path of where our public key is.
 const Pubpath = "public.key"
 
+// Postmsg holds the message we are signing with our private key.
+const Postmsg = "I am a DECODE node!"
+
 func main() {
 	if _, err := os.Stat("private.key"); os.IsNotExist(err) {
 		key := lib.GenRsa(Bits)
@@ -31,13 +34,13 @@ func main() {
 	key, err := lib.LoadKeyFromFile(Privpath)
 	lib.CheckError(err)
 
-	sig := lib.SignMsg([]byte("I am a DECODE node!"), key)
+	sig := lib.SignMsg([]byte(Postmsg), key)
 	encodedSig := base64.StdEncoding.EncodeToString(sig)
 
 	vals := map[string]string{
 		"nodetype":  "node",
 		"address":   lib.OnionFromPubkey(key.PublicKey),
-		"message":   "I'm a DECODE node!",
+		"message":   Postmsg,
 		"signature": encodedSig,
 		"secret":    "",
 	}
