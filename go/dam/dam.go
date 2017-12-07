@@ -5,7 +5,6 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -23,6 +22,10 @@ const Pubpath = "public.key"
 
 // Postmsg holds the message we are signing with our private key.
 const Postmsg = "I am a DECODE node!"
+
+type msgStruct struct {
+	Secret string
+}
 
 func main() {
 	if _, err := os.Stat("private.key"); os.IsNotExist(err) {
@@ -53,10 +56,17 @@ func main() {
 	log.Println("Sending request")
 	resp := lib.HTTPPost("http://localhost:8080/announce", jsonVal)
 
-	body, err := ioutil.ReadAll(resp.Body)
-	lib.CheckError(err)
-
 	// TODO: Handle the secret decryption and returning it back decrypted to the
 	// directory. Note to self: start saving state on ddir's side.
-	log.Println(string(body))
+
+	// Parse server's reply
+	var m msgStruct
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&m)
+	lib.CheckError(err)
+
+	if resp.StatusCode == 500 {
+		log.Println("Unsuccessful reply from directory.")
+		log.Fatalln("Server replied:", m.Secret)
+	}
 }

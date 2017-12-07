@@ -29,7 +29,6 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	err := decoder.Decode(&n)
 	lib.CheckError(err)
 
-	log.Println(n.Signature)
 	decSig, err := base64.StdEncoding.DecodeString(n.Signature)
 	lib.CheckError(err)
 
