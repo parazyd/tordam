@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"../lib"
 )
@@ -20,6 +21,10 @@ type nodeStruct struct {
 	Message   string
 	Signature string
 	Secret    string
+	Pubkey    string
+	Firstseen int64
+	Lastseen  int64
+	Valid     bool
 }
 
 func handlePost(rw http.ResponseWriter, request *http.Request) {
@@ -59,6 +64,11 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	pubkey, err := lib.ParsePubkey(pkey)
 	lib.CheckError(err)
 
+	n.Pubkey = string(pkey)
+	now := time.Now()
+	n.Firstseen = now.Unix()
+	n.Lastseen = now.Unix()
+
 	if len(req["secret"]) != 88 {
 		// Client did not send a decrypted secret.
 		randString, err := lib.GenRandomASCII(64)
@@ -97,6 +107,8 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 			ret := map[string]string{
 				"secret": "Welcome to the DECODE network!",
 			}
+			n.Valid = false
+
 			jsonVal, err := json.Marshal(ret)
 			lib.CheckError(err)
 
