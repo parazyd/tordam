@@ -18,6 +18,7 @@ type nodeStruct struct {
 	Address   string
 	Message   string
 	Signature string
+	Secret    string
 }
 
 func handlePost(rw http.ResponseWriter, request *http.Request) {
@@ -32,12 +33,35 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		"address":   n.Address,
 		"message":   n.Message,
 		"signature": n.Signature,
+		"secret":    n.Secret,
 	}
 
-	if lib.ValidateReq(req) != true {
+	pkey, valid := lib.ValidateReq(req)
+	if !(valid) {
 		log.Fatalln("Request is not valid.")
 	}
 
+	pubkey, err := lib.ParsePubkey(pkey)
+	lib.CheckError(err)
+
+	if len(req["secret"]) != 64 {
+		randString, err := lib.GenRandomASCII(64)
+		lib.CheckError(err)
+
+		secret, err := lib.EncryptMsg([]byte(randString), pubkey)
+		lib.CheckError(err)
+
+		ret := map[string]string{
+			"secret": string(secret),
+		}
+		jsonVal, err := json.Marshal(ret)
+		lib.CheckError(err)
+
+		rw.Header().Set("Content-Type", "application/json")
+		rw.WriteHeader(http.StatusOK)
+		rw.Write(jsonVal)
+		return
+	}
 }
 
 func main() {
