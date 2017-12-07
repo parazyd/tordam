@@ -4,7 +4,9 @@ package lib
 
 import (
 	"bytes"
+	"crypto/rand"
 	"log"
+	"math/big"
 	"net/http"
 	"net/url"
 	"os/exec"
@@ -119,4 +121,21 @@ func HTTPPost(host string, data []byte) *http.Response {
 	CheckError(err)
 
 	return resp
+}
+
+// GenRandomASCII returns a random ASCII string of a given length.
+func GenRandomASCII(length int) (string, error) {
+	var res string
+	for {
+		if len(res) >= length {
+			return res, nil
+		}
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(127)))
+		CheckError(err)
+
+		n := num.Int64()
+		if n > 32 && n < 127 {
+			res += string(n)
+		}
+	}
 }
