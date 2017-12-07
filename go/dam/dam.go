@@ -5,6 +5,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -38,6 +39,7 @@ func main() {
 		"address":   lib.OnionFromPubkey(key.PublicKey),
 		"message":   "I'm a DECODE node!",
 		"signature": encodedSig,
+		"secret":    "",
 	}
 
 	log.Println("Announcing keypair for:", vals["address"])
@@ -48,5 +50,10 @@ func main() {
 	log.Println("Sending request")
 	resp := lib.HTTPPost("http://localhost:8080/announce", jsonVal)
 
-	log.Println(resp)
+	body, err := ioutil.ReadAll(resp.Body)
+	lib.CheckError(err)
+
+	// TODO: Handle the secret decryption and returning it back decrypted to the
+	// directory. Note to self: start saving state on ddir's side.
+	log.Println(string(body))
 }
