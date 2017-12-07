@@ -42,7 +42,10 @@ func FetchHSPubkey(addr string) string {
 	CheckError(err)
 
 	err = cmd.Wait()
-	CheckError(err)
+	if err != nil {
+		log.Println("Could not fetch descriptor. Retrying...")
+		return ""
+	}
 
 	return outb.String()
 }
@@ -63,7 +66,7 @@ func ValidateReq(req map[string]string) bool {
 
 	// Address is valid, we try to fetch its pubkey from a HSDir
 	var pubkey string
-	log.Println("Onion seems valid")
+	log.Println(req["address"], "seems valid")
 	for { // We try until we have it.
 		if strings.HasPrefix(pubkey, "-----BEGIN RSA PUBLIC KEY-----") &&
 			strings.HasSuffix(pubkey, "-----END RSA PUBLIC KEY-----") {
