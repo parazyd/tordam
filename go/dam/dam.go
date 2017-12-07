@@ -18,7 +18,7 @@ const Bits = 1024
 const Privpath = "private.key"
 
 // Pubpath holds the path of where our public key is.
-const Pubpath = "public.key"
+//const Pubpath = "public.key"
 
 // Postmsg holds the message we are signing with our private key.
 const Postmsg = "I am a DECODE node!"
@@ -31,7 +31,7 @@ func main() {
 	if _, err := os.Stat("private.key"); os.IsNotExist(err) {
 		key := lib.GenRsa(Bits)
 		lib.SavePriv(Privpath, key)
-		lib.SavePub(Pubpath, key.PublicKey)
+		//lib.SavePub(Pubpath, key.PublicKey)
 	}
 
 	key, err := lib.LoadKeyFromFile(Privpath)
