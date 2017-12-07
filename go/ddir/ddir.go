@@ -32,7 +32,7 @@ func parsePost(rw http.ResponseWriter, request *http.Request) {
 	}
 
 	if lib.ValidateReq(req) != true {
-		log.Fatal("Request is not valid.")
+		log.Fatalln("Request is not valid.")
 	}
 }
 

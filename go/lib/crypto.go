@@ -110,7 +110,7 @@ func VerifyMsg(message []byte, signature []byte, pubkey []byte) (bool, error) {
 	case *rsa.PublicKey:
 		log.Println("Valid RSA key parsed.")
 	default:
-		log.Fatal("Public key is not of type RSA! It is: ", pkey)
+		log.Fatalln("Public key is not of type RSA! It is: ", pkey)
 		return false, err
 	}
 
