@@ -43,7 +43,7 @@ func FetchHSPubkey(addr string) string {
 
 	err = cmd.Wait()
 	if err != nil {
-		log.Println("Could not fetch descriptor. Retrying...")
+		log.Println("Could not fetch descriptor:", err)
 		return ""
 	}
 
@@ -66,6 +66,7 @@ func ValidateReq(req map[string]string) ([]byte, bool) {
 
 	// Address is valid, we try to fetch its pubkey from a HSDir
 	var pubkey string
+	var cnt = 0
 	log.Println(req["address"], "seems valid")
 	for { // We try until we have it.
 		if strings.HasPrefix(pubkey, "-----BEGIN RSA PUBLIC KEY-----") &&
@@ -73,9 +74,14 @@ func ValidateReq(req map[string]string) ([]byte, bool) {
 			log.Println("Got descriptor!")
 			break
 		}
+		cnt += 1
+		if cnt > 10 {
+			// We probably can't get a good HSDir. The client shall retry
+			// later on.
+			return []byte("Couldn't get a descriptor. Try later."), false
+		}
 		time.Sleep(2000 * time.Millisecond)
 		pubkey = FetchHSPubkey(req["address"])
-		//log.Println(pubkey)
 	}
 
 	// FIXME: commented until bug 23032 is resolved.
