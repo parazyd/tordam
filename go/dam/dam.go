@@ -3,11 +3,9 @@ package main
 // See LICENSE file for copyright and license details.
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"log"
-	"net/http"
 	"os"
 
 	"../lib"
@@ -48,9 +46,7 @@ func main() {
 	lib.CheckError(err)
 
 	log.Println("Sending request")
-	resp, err := http.Post("http://localhost:8080/announce", "application/json",
-		bytes.NewBuffer(jsonVal))
-	lib.CheckError(err)
+	resp := lib.HTTPPost("http://localhost:8080/announce", jsonVal)
 
 	log.Println(resp)
 }
