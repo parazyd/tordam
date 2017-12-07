@@ -10,6 +10,8 @@ import (
 	"../lib"
 )
 
+const ListenAddress = "127.0.0.1:8080"
+
 type nodeStruct struct {
 	Nodetype  string
 	Address   string
@@ -17,7 +19,7 @@ type nodeStruct struct {
 	Signature string
 }
 
-func parsePost(rw http.ResponseWriter, request *http.Request) {
+func handlePost(rw http.ResponseWriter, request *http.Request) {
 	decoder := json.NewDecoder(request.Body)
 
 	var n nodeStruct
@@ -34,9 +36,11 @@ func parsePost(rw http.ResponseWriter, request *http.Request) {
 	if lib.ValidateReq(req) != true {
 		log.Fatalln("Request is not valid.")
 	}
+
 }
 
 func main() {
-	http.HandleFunc("/announce", parsePost)
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/announce", handlePost)
+	http.ListenAndServe(ListenAddress, nil)
+	log.Println("Listening on", ListenAddress)
 }
