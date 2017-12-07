@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sync"
 
 	"../lib"
 )
@@ -40,7 +41,13 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
+	var wg sync.WaitGroup
+
 	http.HandleFunc("/announce", handlePost)
-	http.ListenAndServe(ListenAddress, nil)
+
+	wg.Add(1)
+	go http.ListenAndServe(ListenAddress, nil)
 	log.Println("Listening on", ListenAddress)
+
+	wg.Wait()
 }
