@@ -3,6 +3,7 @@ package main
 // See LICENSE file for copyright and license details.
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -28,17 +29,32 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	err := decoder.Decode(&n)
 	lib.CheckError(err)
 
+	log.Println(n.Signature)
+	decSig, err := base64.StdEncoding.DecodeString(n.Signature)
+	lib.CheckError(err)
+
 	req := map[string]string{
 		"nodetype":  n.Nodetype,
 		"address":   n.Address,
 		"message":   n.Message,
-		"signature": n.Signature,
+		"signature": string(decSig),
 		"secret":    n.Secret,
 	}
 
 	pkey, valid := lib.ValidateReq(req)
-	if !(valid) {
+	if !(valid) && pkey == nil {
 		log.Fatalln("Request is not valid.")
+	} else if !(valid) && pkey != nil {
+		// We couldn't get a descriptor.
+		ret := map[string]string{
+			"secret": string(pkey),
+		}
+		jsonVal, err := json.Marshal(ret)
+		lib.CheckError(err)
+		rw.Header().Set("Content-Type", "application/json")
+		rw.WriteHeader(500)
+		rw.Write(jsonVal)
+		return
 	}
 
 	pubkey, err := lib.ParsePubkey(pkey)
