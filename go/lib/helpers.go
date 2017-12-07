@@ -69,19 +69,19 @@ func ValidateReq(req map[string]string) ([]byte, bool) {
 	var cnt = 0
 	log.Println(req["address"], "seems valid")
 	for { // We try until we have it.
-		if strings.HasPrefix(pubkey, "-----BEGIN RSA PUBLIC KEY-----") &&
-			strings.HasSuffix(pubkey, "-----END RSA PUBLIC KEY-----") {
-			log.Println("Got descriptor!")
-			break
-		}
 		cnt += 1
 		if cnt > 10 {
 			// We probably can't get a good HSDir. The client shall retry
 			// later on.
 			return []byte("Couldn't get a descriptor. Try later."), false
 		}
-		time.Sleep(2000 * time.Millisecond)
 		pubkey = FetchHSPubkey(req["address"])
+		if strings.HasPrefix(pubkey, "-----BEGIN RSA PUBLIC KEY-----") &&
+			strings.HasSuffix(pubkey, "-----END RSA PUBLIC KEY-----") {
+			log.Println("Got descriptor!")
+			break
+		}
+		time.Sleep(2000 * time.Millisecond)
 	}
 
 	// Validate signature.
