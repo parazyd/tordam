@@ -1,13 +1,22 @@
 package lib
 
+// See LICENSE file for copyright and license details.
+
 import (
 	"bytes"
 	"log"
+	"net/http"
+	"net/url"
 	"os/exec"
 	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/net/proxy"
 )
+
+// ProxyAddr is the address of our Tor SOCKS port.
+const ProxyAddr = "127.0.0.1:9050"
 
 // CheckError is a handler for errors.
 func CheckError(err error) {
@@ -75,4 +84,35 @@ func ValidateReq(req map[string]string) bool {
 	}
 
 	return true
+}
+
+// HTTPPost sends an HTTP POST request to the given host. It sends data as
+// application/json.
+func HTTPPost(host string, data []byte) *http.Response {
+	socksify := false
+
+	parsedHost, err := url.Parse(host)
+	CheckError(err)
+	hostname := parsedHost.Hostname()
+	if strings.HasSuffix(hostname, ".onion") {
+		socksify = true
+	}
+
+	httpTransp := &http.Transport{}
+	httpClient := &http.Client{Transport: httpTransp}
+	if socksify {
+		log.Println("Detected a .onion request. Using SOCKS proxy.")
+		dialer, err := proxy.SOCKS5("tcp", ProxyAddr, nil, proxy.Direct)
+		CheckError(err)
+		httpTransp.Dial = dialer.Dial
+	}
+
+	request, err := http.NewRequest("POST", host, bytes.NewBuffer(data))
+	CheckError(err)
+	request.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpClient.Do(request)
+	CheckError(err)
+
+	return resp
 }
