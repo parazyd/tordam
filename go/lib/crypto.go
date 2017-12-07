@@ -136,19 +136,13 @@ func OnionFromPubkey(pubkey rsa.PublicKey) string {
 // ParsePubkey parses a []byte form of a RSA public key and returns the proper
 // type.
 func ParsePubkey(pubkey []byte) (*rsa.PublicKey, error) {
-	block, _ := pem.Decode(pubkey)
-	if block == nil {
-		return nil, errors.New("Failed to parse PEM block containing the public key.")
-	}
+	var pub rsa.PublicKey
+	var ret *rsa.PublicKey
 
-	// FIXME: Golang bug. Reported at: https://github.com/golang/go/issues/23032
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	block, _ := pem.Decode(pubkey)
+	_, err := asn1.Unmarshal(block.Bytes, &pub)
 	CheckError(err)
 
-	switch pub := pub.(type) {
-	case *rsa.PublicKey:
-		return pub, nil
-	default:
-		return nil, errors.New("Invalid type of public key")
-	}
+	ret = &pub
+	return ret, nil
 }

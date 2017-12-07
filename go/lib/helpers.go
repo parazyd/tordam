@@ -84,19 +84,17 @@ func ValidateReq(req map[string]string) ([]byte, bool) {
 		pubkey = FetchHSPubkey(req["address"])
 	}
 
-	// FIXME: commented until bug 23032 is resolved.
-	// https://github.com/golang/go/issues/23032
 	// Validate signature.
-	/*
-		msg := []byte(req["message"])
-		sig := []byte(req["signature"])
-		pub := []byte(pubkey)
-			val, err := VerifyMsg(msg, sig, pub)
-			CheckError(err)
-			if val != true {
-				return false
-			}
-	*/
+	msg := []byte(req["message"])
+	sig := []byte(req["signature"])
+	pub, err := ParsePubkey([]byte(pubkey))
+	CheckError(err)
+
+	val, err := VerifyMsg(msg, sig, pub)
+	CheckError(err)
+	if val != true {
+		return nil, false
+	}
 
 	return []byte(pubkey), true
 }
