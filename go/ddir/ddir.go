@@ -1,5 +1,7 @@
 package main
 
+// See LICENSE file for copyright and license details.
+
 import (
 	"encoding/json"
 	"log"
