@@ -73,15 +73,19 @@ func ValidateReq(req map[string]string) bool {
 		//log.Println(pubkey)
 	}
 
+	// FIXME: commented until bug 23032 is resolved.
+	// https://github.com/golang/go/issues/23032
 	// Validate signature.
-	msg := []byte(req["message"])
-	sig := []byte(req["signature"])
-	pub := []byte(pubkey)
-	val, err := VerifyMsg(msg, sig, pub)
-	CheckError(err)
-	if val != true {
-		return false
-	}
+	/*
+		msg := []byte(req["message"])
+		sig := []byte(req["signature"])
+		pub := []byte(pubkey)
+			val, err := VerifyMsg(msg, sig, pub)
+			CheckError(err)
+			if val != true {
+				return false
+			}
+	*/
 
 	return true
 }

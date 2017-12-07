@@ -102,7 +102,7 @@ func VerifyMsg(message []byte, signature []byte, pubkey []byte) (bool, error) {
 		return false, errors.New("failed to parse PEM block containing the key")
 	}
 
-	// This is a bug in golang. Reported at: https://github.com/golang/go/issues/23032
+	// FIXME: Golang bug. Reported at: https://github.com/golang/go/issues/23032
 	pkey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	CheckError(err)
 
