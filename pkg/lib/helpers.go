@@ -34,7 +34,7 @@ func FetchHSPubkey(addr string) string {
 
 	log.Println("Fetching pubkey for:", addr)
 
-	cmd := exec.Command("./dirauth.py", addr)
+	cmd := exec.Command("dirauth.py", addr)
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
 
