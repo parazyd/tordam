@@ -99,9 +99,9 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		jsonVal, err := json.Marshal(ret)
 		lib.CheckError(err)
 
-		// TODO: We probably _do_ want to allow the keyholder to
-		// reannounce itself, so let's not handle this yet.
-		//ex := RedisCli.Exists(n.Address)
+		// Check if we have seen this node already.
+		ex, err := RedisCli.Exists(n.Address).Result()
+		lib.CheckError(err)
 
 		// Save the node into redis
 		info := map[string]interface{}{
@@ -111,11 +111,15 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 			"signature": n.Signature,
 			"secret":    base64.StdEncoding.EncodeToString([]byte(randString)),
 			"pubkey":    n.Pubkey,
-			"firstseen": n.Firstseen,
 			"lastseen":  n.Lastseen,
-			"valid":     0, // This should be 1 after the node is not considered malicious
 		}
-		log.Println("Writing into Redis")
+
+		if ex != 1 {
+			info["firstseen"] = n.Firstseen
+			info["valid"] = 0 // This should be 1 after the node is not considered malicious
+		}
+
+		log.Println("Writing to Redis")
 		redRet, err := RedisCli.HMSet(n.Address, info).Result()
 		lib.CheckError(err)
 
