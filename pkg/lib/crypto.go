@@ -39,17 +39,14 @@ func SavePub(filename string, pubkey rsa.PublicKey) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
 	asn1Bytes, err := asn1.Marshal(pubkey)
 	if err != nil {
 		return false, err
 	}
-
 	var pemkey = &pem.Block{
 		Type:  "RSA PUBLIC KEY",
 		Bytes: asn1Bytes,
 	}
-
 	err = pem.Encode(outfile, pemkey)
 	if err != nil {
 		return false, err
@@ -70,12 +67,10 @@ func SavePriv(filename string, privkey *rsa.PrivateKey) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
 	var pemkey = &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privkey),
 	}
-
 	err = pem.Encode(outfile, pemkey)
 	if err != nil {
 		return false, err
@@ -94,17 +89,14 @@ func LoadKeyFromFile(filename string) (*rsa.PrivateKey, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	block, _ := pem.Decode(dat)
 	if block == nil {
 		return nil, errors.New("failed to parse PEM block containing the key")
 	}
-
 	priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		return nil, err
 	}
-
 	return priv, nil
 }
 
@@ -112,13 +104,11 @@ func LoadKeyFromFile(filename string) (*rsa.PrivateKey, error) {
 func SignMsg(message []byte, privkey *rsa.PrivateKey) ([]byte, error) {
 	log.Println("Signing message...")
 	rng := rand.Reader
-
 	hashed := sha512.Sum512(message)
 	sig, err := rsa.SignPKCS1v15(rng, privkey, crypto.SHA512, hashed[:])
 	if err != nil {
 		return nil, err
 	}
-
 	return sig, nil
 }
 
@@ -127,12 +117,10 @@ func SignMsg(message []byte, privkey *rsa.PrivateKey) ([]byte, error) {
 func EncryptMsg(message []byte, pubkey *rsa.PublicKey) ([]byte, error) {
 	log.Println("Encrypting message...")
 	rng := rand.Reader
-
 	msg, err := rsa.EncryptPKCS1v15(rng, pubkey, message)
 	if err != nil {
 		return nil, err
 	}
-
 	return msg, nil
 }
 
@@ -141,12 +129,10 @@ func EncryptMsg(message []byte, pubkey *rsa.PublicKey) ([]byte, error) {
 func DecryptMsg(message []byte, privkey *rsa.PrivateKey) ([]byte, error) {
 	log.Println("Decrypting message...")
 	rng := rand.Reader
-
 	msg, err := rsa.DecryptPKCS1v15(rng, privkey, message)
 	if err != nil {
 		return nil, err
 	}
-
 	return msg, nil
 }
 
@@ -154,13 +140,11 @@ func DecryptMsg(message []byte, privkey *rsa.PrivateKey) ([]byte, error) {
 // RSA pubkey.
 func VerifyMsg(message []byte, signature []byte, pubkey *rsa.PublicKey) (bool, error) {
 	log.Println("Verifying message signature")
-
 	hashed := sha512.Sum512(message)
 	err := rsa.VerifyPKCS1v15(pubkey, crypto.SHA512, hashed[:], signature)
 	if err != nil {
 		return false, err
 	}
-
 	log.Println("Signature valid")
 	return true, nil
 }
@@ -171,13 +155,11 @@ func OnionFromPubkey(pubkey rsa.PublicKey) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	hashed := sha1.New()
 	_, err = hashed.Write(asn1Bytes)
 	if err != nil {
 		return nil, err
 	}
-
 	encoded := strings.ToLower(base32.StdEncoding.EncodeToString(hashed.Sum(nil)))[:16]
 	encoded += ".onion"
 
@@ -189,13 +171,11 @@ func OnionFromPubkey(pubkey rsa.PublicKey) ([]byte, error) {
 func ParsePubkey(pubkey []byte) (*rsa.PublicKey, error) {
 	var pub rsa.PublicKey
 	var ret *rsa.PublicKey
-
 	block, _ := pem.Decode(pubkey)
 	_, err := asn1.Unmarshal(block.Bytes, &pub)
 	if err != nil {
 		return nil, err
 	}
-
 	ret = &pub
 	return ret, nil
 }

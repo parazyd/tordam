@@ -87,12 +87,10 @@ func main() {
 		"signature": encodedSig,
 		"secret":    "",
 	}
-
-	log.Println("Announcing keypair for:", vals["address"])
-
 	jsonVal, err := json.Marshal(vals)
 	lib.CheckError(err)
 
+	log.Println("Announcing keypair for:", vals["address"])
 	log.Println("Sending request")
 	resp, err := lib.HTTPPost("http://localhost:8080/announce", jsonVal)
 	lib.CheckError(err)

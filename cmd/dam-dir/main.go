@@ -86,9 +86,6 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		randString, err := lib.GenRandomASCII(64)
 		lib.CheckError(err)
 
-		// FIXME: delete this line after debug mode
-		log.Println("Secret:", randString)
-
 		secret, err := lib.EncryptMsg([]byte(randString), pubkey)
 		lib.CheckError(err)
 
@@ -118,7 +115,6 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 			info["firstseen"] = n.Firstseen
 			info["valid"] = 0 // This should be 1 after the node is not considered malicious
 		}
-
 		log.Println("Writing to Redis")
 		redRet, err := RedisCli.HMSet(n.Address, info).Result()
 		lib.CheckError(err)
@@ -142,14 +138,12 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 			log.Println("Secrets match!")
 			correct = true
 		}
-
 		if correct {
 			log.Printf("Welcoming %s to the network\n", n.Address)
 			ret := map[string]string{
 				"secret": "Welcome to the DECODE network!",
 			}
 			n.Valid = 0
-
 			jsonVal, err := json.Marshal(ret)
 			lib.CheckError(err)
 

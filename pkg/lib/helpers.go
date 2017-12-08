@@ -37,7 +37,6 @@ func FetchHSPubkey(addr string) string {
 	cmd := exec.Command("dirauth.py", addr)
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
-
 	err := cmd.Start()
 	CheckError(err)
 
@@ -56,14 +55,12 @@ func ValidateReq(req map[string]string) ([]byte, bool) {
 	if req["nodetype"] != "node" {
 		return nil, false
 	}
-
 	// Validate address.
 	re, err := regexp.Compile("^[a-z2-7]{16}\\.onion$")
 	CheckError(err)
 	if len(re.FindString(req["address"])) != 22 {
 		return nil, false
 	}
-
 	// Address is valid, we try to fetch its pubkey from a HSDir
 	var pubkey string
 	var cnt = 0
@@ -83,7 +80,6 @@ func ValidateReq(req map[string]string) ([]byte, bool) {
 		}
 		time.Sleep(2000 * time.Millisecond)
 	}
-
 	// Validate signature.
 	msg := []byte(req["message"])
 	sig := []byte(req["signature"])
@@ -103,7 +99,6 @@ func ValidateReq(req map[string]string) ([]byte, bool) {
 // application/json.
 func HTTPPost(host string, data []byte) (*http.Response, error) {
 	socksify := false
-
 	parsedHost, err := url.Parse(host)
 	if err != nil {
 		return nil, err
@@ -112,7 +107,6 @@ func HTTPPost(host string, data []byte) (*http.Response, error) {
 	if strings.HasSuffix(hostname, ".onion") {
 		socksify = true
 	}
-
 	httpTransp := &http.Transport{}
 	httpClient := &http.Client{Transport: httpTransp}
 	if socksify {
@@ -123,7 +117,6 @@ func HTTPPost(host string, data []byte) (*http.Response, error) {
 		}
 		httpTransp.Dial = dialer.Dial
 	}
-
 	request, err := http.NewRequest("POST", host, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
@@ -149,7 +142,6 @@ func GenRandomASCII(length int) (string, error) {
 		if err != nil {
 			return "", err
 		}
-
 		n := num.Int64()
 		if n > 32 && n < 127 {
 			res += string(n)
