@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/parazyd/tor-dam/lib"
+	"github.com/parazyd/tor-dam/pkg/lib"
 )
 
 // ListenAddress controls where our HTTP API daemon is listening.

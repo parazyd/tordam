@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/parazyd/tor-dam/lib"
+	"github.com/parazyd/tor-dam/pkg/lib"
 )
 
 // Bits hold the size of our RSA private key. Tor standard is 1024.
