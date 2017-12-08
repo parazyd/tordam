@@ -8,7 +8,7 @@ Installation
 ------------
 
 ```
-go get -u github.com/parazyd/tor-dam
+go get -u github.com/parazyd/tor-dam/...
 ```
 
 From the source, install python/dirauth.py to your `$PATH`.
