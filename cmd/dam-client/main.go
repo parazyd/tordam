@@ -56,9 +56,6 @@ func main() {
 	log.Println("Sending request")
 	resp := lib.HTTPPost("http://localhost:8080/announce", jsonVal)
 
-	// TODO: Handle the secret decryption and returning it back decrypted to the
-	// directory. Note to self: start saving state on ddir's side.
-
 	// Parse server's reply
 	var m msgStruct
 	decoder := json.NewDecoder(resp.Body)
