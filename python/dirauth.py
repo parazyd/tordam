@@ -13,3 +13,4 @@ from stem.control import Controller
 with Controller.from_port() as ctl:
     ctl.authenticate(password='topkek')
     stdout.write(ctl.get_hidden_service_descriptor(argv[1]).permanent_key)
+    stdout.flush()

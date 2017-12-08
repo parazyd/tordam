@@ -47,9 +47,11 @@ def main():
 
     service = start_hs(ctl=controller, ktype=ktype, kcont=kcont)
 
-    stdout.write('Started HS at %.onion\n' % service.service_id)
+    stdout.write('Started HS at %s.onion\n' % service.service_id)
+    stdout.flush()
     while True:
         stdout.write('OK\n')
+        stdout.flush()
         sleep(10)
 
 if __name__ == '__main__':
