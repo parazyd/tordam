@@ -33,6 +33,7 @@ func GenRsa(bitSize int) (*rsa.PrivateKey, error) {
 // SavePub saves a given RSA public key to a given filename.
 func SavePub(filename string, pubkey rsa.PublicKey) (bool, error) {
 	log.Printf("Writing pubkey to %s\n", filename)
+	// FIXME: worry or not about creating the path if it doesn't exist?
 	outfile, err := os.Create(filename)
 	defer outfile.Close()
 	if err != nil {
@@ -53,12 +54,17 @@ func SavePub(filename string, pubkey rsa.PublicKey) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	err = outfile.Chmod(0400)
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
 // SavePriv saves a given RSA private key to a given filename.
 func SavePriv(filename string, privkey *rsa.PrivateKey) (bool, error) {
 	log.Printf("Writing private key to %s\n", filename)
+	// FIXME: worry or not about creating the path if it doesn't exist?
 	outfile, err := os.Create(filename)
 	defer outfile.Close()
 	if err != nil {
@@ -71,6 +77,10 @@ func SavePriv(filename string, privkey *rsa.PrivateKey) (bool, error) {
 	}
 
 	err = pem.Encode(outfile, pemkey)
+	if err != nil {
+		return false, err
+	}
+	err = outfile.Chmod(0400)
 	if err != nil {
 		return false, err
 	}
