@@ -23,6 +23,7 @@ Abstract
 * Tor-DAM **does not validate** if a node is malicious or not. This is
   a layer that has to be established on top. Tor-DAM is just the entry
   point into the network.
+* A node can become a directory once it is proven valid (not malicious).
 
 
 Protocol
