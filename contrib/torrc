@@ -1,0 +1,16 @@
+#
+# Minimal torrc so tor will work out of the box
+#
+
+User tor
+PIDFile /var/run/tor/tor.pid
+Log notice syslog
+DataDirectory /var/lib/tor/data
+
+ControlPort 9051
+CookieAuthentication 1
+HashedControlPassword 16:6091EDA9F3F5F8EB60C8423561CB8C46B3CCF033E88FEACA1FC8BDBB9A
+
+SocksPort 9050
+
+ClientRejectInternalAddresses 1
