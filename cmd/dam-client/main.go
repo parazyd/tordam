@@ -3,10 +3,12 @@ package main
 // See LICENSE file for copyright and license details.
 
 import (
+	"bufio"
 	"encoding/base64"
 	"encoding/json"
 	"log"
 	"os"
+	"os/exec"
 
 	"github.com/parazyd/tor-dam/pkg/lib"
 )
@@ -15,10 +17,10 @@ import (
 const Bits = 1024
 
 // Privpath holds the path of where our private key is.
-const Privpath = "private.key"
+const Privpath = "/tmp/decode-private.key"
 
 // Pubpath holds the path of where our public key is.
-//const Pubpath = "public.key"
+//const Pubpath = "/tmp/decode-public.pub"
 
 // Postmsg holds the message we are signing with our private key.
 const Postmsg = "I am a DECODE node!"
@@ -28,13 +30,31 @@ type msgStruct struct {
 }
 
 func main() {
-	if _, err := os.Stat("private.key"); os.IsNotExist(err) {
+	if _, err := os.Stat(Privpath); os.IsNotExist(err) {
 		key, err := lib.GenRsa(Bits)
 		lib.CheckError(err)
 		_, err = lib.SavePriv(Privpath, key)
 		lib.CheckError(err)
-		//_, err := lib.SavePub(Pubpath, key.PublicKey)
-		lib.CheckError(err)
+	}
+
+	// Start up the hidden service
+	log.Println("Starting up the hidden service...")
+	cmd := exec.Command("decodehs.py", Privpath)
+	stdout, err := cmd.StdoutPipe()
+	lib.CheckError(err)
+
+	err = cmd.Start()
+	lib.CheckError(err)
+
+	scanner := bufio.NewScanner(stdout)
+	ok := false
+	for !(ok) {
+		scanner.Scan()
+		status := scanner.Text()
+		if status == "OK" {
+			log.Println("Hidden service is now running")
+			ok = true
+		}
 	}
 
 	key, err := lib.LoadKeyFromFile(Privpath)
@@ -104,4 +124,7 @@ func main() {
 			log.Fatalln("Server replied:", m.Secret)
 		}
 	}
+
+	err = cmd.Wait() // Hidden service Python daemon
+	lib.CheckError(err)
 }
