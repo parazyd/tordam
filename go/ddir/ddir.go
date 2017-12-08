@@ -10,10 +10,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-redis/redis"
+
 	"../lib"
 )
 
+// ListenAddress controls where our HTTP API daemon is listening.
 const ListenAddress = "127.0.0.1:8080"
+
+// RedisAddress points us to our Redis instance.
+const RedisAddress = "127.0.0.1:6379"
+
+// RedisCli is our global Redis client
+var RedisCli = redis.NewClient(&redis.Options{
+	Addr:     RedisAddress,
+	Password: "",
+	DB:       0,
+})
 
 type nodeStruct struct {
 	Nodetype  string
@@ -24,7 +37,7 @@ type nodeStruct struct {
 	Pubkey    string
 	Firstseen int64
 	Lastseen  int64
-	Valid     bool
+	Valid     int64
 }
 
 func handlePost(rw http.ResponseWriter, request *http.Request) {
@@ -87,27 +100,55 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		jsonVal, err := json.Marshal(ret)
 		lib.CheckError(err)
 
-		rw.Header().Set("Content-Type", "application/json")
-		rw.WriteHeader(http.StatusOK)
-		rw.Write(jsonVal)
-		return
+		// TODO: We probably _do_ want to allow the keyholder to
+		// reannounce itself, so let's not handle this yet.
+		//ex := RedisCli.Exists(n.Address)
+
+		// Save the node into redis
+		info := map[string]interface{}{
+			"nodetype":  n.Nodetype,
+			"address":   n.Address,
+			"message":   n.Message,
+			"signature": n.Signature,
+			"secret":    base64.StdEncoding.EncodeToString([]byte(randString)),
+			"pubkey":    n.Pubkey,
+			"firstseen": n.Firstseen,
+			"lastseen":  n.Lastseen,
+			"valid":     0, // This should be 1 after the node is not considered malicious
+		}
+		log.Println("Writing into Redis")
+		redRet, err := RedisCli.HMSet(n.Address, info).Result()
+		lib.CheckError(err)
+
+		if redRet == "OK" {
+			log.Println("Returning encrypted secret to caller.")
+			rw.Header().Set("Content-Type", "application/json")
+			rw.WriteHeader(http.StatusOK)
+			rw.Write(jsonVal)
+			return
+		}
 	}
 
 	if len(req["secret"]) == 88 {
 		// Client sent a decrypted secret.
-		decodedSec, err := base64.StdEncoding.DecodeString(req["secret"])
+		//decodedSec, err := base64.StdEncoding.DecodeString(req["secret"])
+		//lib.CheckError(err)
+
+		var correct = false
+		localSec, err := RedisCli.HGet(n.Address, "secret").Result()
 		lib.CheckError(err)
 
-		// TODO: validate against state
-		var correct = true
-
-		log.Println(string(decodedSec))
+		if localSec == req["secret"] {
+			log.Println("Secrets match!")
+			correct = true
+		}
 
 		if correct {
+			log.Printf("Welcoming %s to the network\n", n.Address)
 			ret := map[string]string{
 				"secret": "Welcome to the DECODE network!",
 			}
-			n.Valid = false
+			n.Valid = 0
 
 			jsonVal, err := json.Marshal(ret)
 			lib.CheckError(err)
@@ -122,6 +163,9 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 
 func main() {
 	var wg sync.WaitGroup
+
+	_, err := RedisCli.Ping().Result()
+	lib.CheckError(err)
 
 	http.HandleFunc("/announce", handlePost)
 

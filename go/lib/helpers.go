@@ -69,7 +69,7 @@ func ValidateReq(req map[string]string) ([]byte, bool) {
 	var cnt = 0
 	log.Println(req["address"], "seems valid")
 	for { // We try until we have it.
-		cnt += 1
+		cnt++
 		if cnt > 10 {
 			// We probably can't get a good HSDir. The client shall retry
 			// later on.
