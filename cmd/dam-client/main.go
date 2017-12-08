@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/parazyd/tor-dam/pkg/lib"
 )
@@ -48,6 +49,18 @@ func main() {
 
 	scanner := bufio.NewScanner(stdout)
 	ok := false
+	go func() {
+		// If we do not manage to publish our descriptor, we will exit.
+		t1 := time.Now().Unix()
+		for !(ok) {
+			t2 := time.Now().Unix()
+			if t2-t1 > 90 {
+				cmd.Process.Kill()
+				log.Fatalln("Too much time passed. Exiting.")
+			}
+			time.Sleep(1000 * time.Millisecond)
+		}
+	}()
 	for !(ok) {
 		scanner.Scan()
 		status := scanner.Text()
