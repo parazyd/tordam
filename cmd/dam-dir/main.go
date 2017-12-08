@@ -130,7 +130,6 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 
 	if len(req["secret"]) == 88 {
 		// Client sent a decrypted secret.
-
 		var correct = false
 		localSec, err := RedisCli.HGet(n.Address, "secret").Result()
 		lib.CheckError(err)

@@ -23,7 +23,7 @@ const ProxyAddr = "127.0.0.1:9050"
 // CheckError is a handler for errors.
 func CheckError(err error) {
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 }
 
@@ -101,11 +101,13 @@ func ValidateReq(req map[string]string) ([]byte, bool) {
 
 // HTTPPost sends an HTTP POST request to the given host. It sends data as
 // application/json.
-func HTTPPost(host string, data []byte) *http.Response {
+func HTTPPost(host string, data []byte) (*http.Response, error) {
 	socksify := false
 
 	parsedHost, err := url.Parse(host)
-	CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 	hostname := parsedHost.Hostname()
 	if strings.HasSuffix(hostname, ".onion") {
 		socksify = true
@@ -116,18 +118,24 @@ func HTTPPost(host string, data []byte) *http.Response {
 	if socksify {
 		log.Println("Detected a .onion request. Using SOCKS proxy.")
 		dialer, err := proxy.SOCKS5("tcp", ProxyAddr, nil, proxy.Direct)
-		CheckError(err)
+		if err != nil {
+			return nil, err
+		}
 		httpTransp.Dial = dialer.Dial
 	}
 
 	request, err := http.NewRequest("POST", host, bytes.NewBuffer(data))
-	CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := httpClient.Do(request)
-	CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 
-	return resp
+	return resp, nil
 }
 
 // GenRandomASCII returns a random ASCII string of a given length.
@@ -138,7 +146,9 @@ func GenRandomASCII(length int) (string, error) {
 			return res, nil
 		}
 		num, err := rand.Int(rand.Reader, big.NewInt(int64(127)))
-		CheckError(err)
+		if err != nil {
+			return "", err
+		}
 
 		n := num.Int64()
 		if n > 32 && n < 127 {

@@ -29,20 +29,27 @@ type msgStruct struct {
 
 func main() {
 	if _, err := os.Stat("private.key"); os.IsNotExist(err) {
-		key := lib.GenRsa(Bits)
-		lib.SavePriv(Privpath, key)
-		//lib.SavePub(Pubpath, key.PublicKey)
+		key, err := lib.GenRsa(Bits)
+		lib.CheckError(err)
+		_, err = lib.SavePriv(Privpath, key)
+		lib.CheckError(err)
+		//_, err := lib.SavePub(Pubpath, key.PublicKey)
+		lib.CheckError(err)
 	}
 
 	key, err := lib.LoadKeyFromFile(Privpath)
 	lib.CheckError(err)
 
-	sig := lib.SignMsg([]byte(Postmsg), key)
+	sig, err := lib.SignMsg([]byte(Postmsg), key)
+	lib.CheckError(err)
 	encodedSig := base64.StdEncoding.EncodeToString(sig)
+
+	onionAddr, err := lib.OnionFromPubkey(key.PublicKey)
+	lib.CheckError(err)
 
 	vals := map[string]string{
 		"nodetype":  "node",
-		"address":   lib.OnionFromPubkey(key.PublicKey),
+		"address":   string(onionAddr),
 		"message":   Postmsg,
 		"signature": encodedSig,
 		"secret":    "",
@@ -54,7 +61,8 @@ func main() {
 	lib.CheckError(err)
 
 	log.Println("Sending request")
-	resp := lib.HTTPPost("http://localhost:8080/announce", jsonVal)
+	resp, err := lib.HTTPPost("http://localhost:8080/announce", jsonVal)
+	lib.CheckError(err)
 
 	// Parse server's reply
 	var m msgStruct
@@ -82,7 +90,8 @@ func main() {
 		lib.CheckError(err)
 
 		log.Println("Sending back decrypted secret.")
-		resp = lib.HTTPPost("http://localhost:8080/announce", jsonVal)
+		resp, err := lib.HTTPPost("http://localhost:8080/announce", jsonVal)
+		lib.CheckError(err)
 		decoder = json.NewDecoder(resp.Body)
 		err = decoder.Decode(&m)
 		lib.CheckError(err)
