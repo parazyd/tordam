@@ -20,7 +20,8 @@ import (
 // ProxyAddr is the address of our Tor SOCKS port.
 const ProxyAddr = "127.0.0.1:9050"
 
-// CheckError is a handler for errors.
+// CheckError is a handler for errors. It takes an error type as an argument,
+// and issues a log.Fatalln, printing the error and exiting with os.Exit(1).
 func CheckError(err error) {
 	if err != nil {
 		log.Fatalln(err)
@@ -28,7 +29,8 @@ func CheckError(err error) {
 }
 
 // FetchHSPubkey fetches a hidden service's RSA pubkey by running an external
-// program, giving it an onion address.
+// program, giving it an onion address. It returns the retrieved public key as a
+// string.
 func FetchHSPubkey(addr string) string {
 	var outb, errb bytes.Buffer
 
@@ -49,7 +51,22 @@ func FetchHSPubkey(addr string) string {
 	return outb.String()
 }
 
-// ValidateReq validates our given request against some checks.
+// ValidateReq validates our given request against the logic we are checking.
+// The function takes a request data map, and a public key in the form of a
+// string. If the public key is an empty string, the function will run an
+// external program to fetch the node's public key from a Tor HSDir.
+//
+// ValidateReq  will first validate "nodetype", looking whether the announcer
+// is a node or a directory.
+// Then, it will validate the onion address using a regular expression.
+// Now, if pubkey is empty, it will run the external program to fetch it. If a
+// descriptor can't be retrieved, it will retry for 10 times, and fail if those
+// are not successful.
+//
+// Continuing, ValidateReq will verify the RSA signature posted by the
+// announcer.
+// If any of the above are invalid, the function will return nil and false.
+// Otherwise, it will return the pubkey as a slice of bytes, and true.
 func ValidateReq(req map[string]string, pubkey string) ([]byte, bool) {
 	// Validate nodetype.
 	if req["nodetype"] != "node" {
@@ -97,8 +114,11 @@ func ValidateReq(req map[string]string, pubkey string) ([]byte, bool) {
 	return []byte(pubkey), true
 }
 
-// HTTPPost sends an HTTP POST request to the given host. It sends data as
-// application/json.
+// HTTPPost sends an HTTP POST request to the given host.
+// Takes the host to request and the data to post as arguments.
+// If the host ends with ".onion", it will enable the request to be performed
+// over a SOCKS proxy, defined in ProxyAddr.
+// On success, it will return the http.Response. Otherwise, it returns an error.
 func HTTPPost(host string, data []byte) (*http.Response, error) {
 	socksify := false
 	parsedHost, err := url.Parse(host)

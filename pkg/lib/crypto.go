@@ -19,7 +19,8 @@ import (
 	"strings"
 )
 
-// GenRsa generates a private RSA keypair of a given bitSize int.
+// GenRsa generates a private RSA keypair of a given bitSize int and returns it
+// as rsa.PrivateKey.
 func GenRsa(bitSize int) (*rsa.PrivateKey, error) {
 	log.Printf("Generating %d-bit RSA keypair...\n", bitSize)
 	rng := rand.Reader
@@ -31,6 +32,9 @@ func GenRsa(bitSize int) (*rsa.PrivateKey, error) {
 }
 
 // SavePub saves a given RSA public key to a given filename.
+// SavePub takes the filename to write as a string, and the key as
+// rsa.PublicKey. It returns a boolean value and an error, depending on whether
+// it has failed or not.
 func SavePub(filename string, pubkey rsa.PublicKey) (bool, error) {
 	log.Printf("Writing pubkey to %s\n", filename)
 	// FIXME: worry or not about creating the path if it doesn't exist?
@@ -59,6 +63,9 @@ func SavePub(filename string, pubkey rsa.PublicKey) (bool, error) {
 }
 
 // SavePriv saves a given RSA private key to a given filename.
+// SavePriv takes the filename to write as a string, and the key as
+// *rsa.PrivateKey. It returns a boolean value and an error, depending on whether
+// it has failed or not.
 func SavePriv(filename string, privkey *rsa.PrivateKey) (bool, error) {
 	log.Printf("Writing private key to %s\n", filename)
 	// FIXME: worry or not about creating the path if it doesn't exist?
@@ -83,6 +90,9 @@ func SavePriv(filename string, privkey *rsa.PrivateKey) (bool, error) {
 }
 
 // LoadKeyFromFile loads a RSA private key from a given filename.
+// LoadKeyFromFile takes a string filename and tries to read from it, parsing
+// the private RSA key. It will return a *rsa.PrivateKey on success, and error
+// on fail.
 func LoadKeyFromFile(filename string) (*rsa.PrivateKey, error) {
 	log.Println("Loading RSA private key from", filename)
 	dat, err := ioutil.ReadFile(filename)
@@ -101,6 +111,8 @@ func LoadKeyFromFile(filename string) (*rsa.PrivateKey, error) {
 }
 
 // SignMsg signs a given []byte message using a given RSA private key.
+// It will return the signature as a slice of bytes on success, and error on
+// failure.
 func SignMsg(message []byte, privkey *rsa.PrivateKey) ([]byte, error) {
 	log.Println("Signing message...")
 	rng := rand.Reader
@@ -113,7 +125,8 @@ func SignMsg(message []byte, privkey *rsa.PrivateKey) ([]byte, error) {
 }
 
 // EncryptMsg encrypts a given []byte message using a given RSA public key.
-// Returns the encrypted message in []byte form.
+// Returns the encrypted message as a slice of bytes on success, and error on
+// failure.
 func EncryptMsg(message []byte, pubkey *rsa.PublicKey) ([]byte, error) {
 	log.Println("Encrypting message...")
 	rng := rand.Reader
@@ -125,7 +138,8 @@ func EncryptMsg(message []byte, pubkey *rsa.PublicKey) ([]byte, error) {
 }
 
 // DecryptMsg decrypts a given []byte message using a given RSA private key.
-// Returns the decrypted message in []byte form.
+// Returns the decrypted message as a slice of bytes on success, and error on
+// failure.
 func DecryptMsg(message []byte, privkey *rsa.PrivateKey) ([]byte, error) {
 	log.Println("Decrypting message...")
 	rng := rand.Reader
@@ -136,8 +150,8 @@ func DecryptMsg(message []byte, privkey *rsa.PrivateKey) ([]byte, error) {
 	return msg, nil
 }
 
-// VerifyMsg verifies a []byte message and []byte signature against a given
-// RSA pubkey.
+// VerifyMsg verifies a message and signature against a given RSA pubkey.
+// Returns a boolean value and error depending on whether it has failed or not.
 func VerifyMsg(message []byte, signature []byte, pubkey *rsa.PublicKey) (bool, error) {
 	log.Println("Verifying message signature")
 	hashed := sha512.Sum512(message)
@@ -150,6 +164,8 @@ func VerifyMsg(message []byte, signature []byte, pubkey *rsa.PublicKey) (bool, e
 }
 
 // OnionFromPubkey generates a valid onion address from a given RSA pubkey.
+// Returns the onion address as a slice of bytes on success and error on
+// failure.
 func OnionFromPubkey(pubkey rsa.PublicKey) ([]byte, error) {
 	asn1Bytes, err := asn1.Marshal(pubkey)
 	if err != nil {
@@ -166,8 +182,8 @@ func OnionFromPubkey(pubkey rsa.PublicKey) ([]byte, error) {
 	return []byte(encoded), nil
 }
 
-// ParsePubkey parses a []byte form of a RSA public key and returns the proper
-// type.
+// ParsePubkey parses a []byte form of a RSA public key and returns it as
+// *rsa.PublicKey on success. Otherwise, error.
 func ParsePubkey(pubkey []byte) (*rsa.PublicKey, error) {
 	var pub rsa.PublicKey
 	var ret *rsa.PublicKey
