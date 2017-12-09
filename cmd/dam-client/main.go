@@ -92,7 +92,8 @@ func main() {
 
 	log.Println("Announcing keypair for:", vals["address"])
 	log.Println("Sending request")
-	resp, err := lib.HTTPPost("http://localhost:8080/announce", jsonVal)
+	//resp, err := lib.HTTPPost("http://localhost:49371/announce", jsonVal)
+	resp, err := lib.HTTPPost("http://qvhgzxjkdchj2jl5.onion/announce", jsonVal)
 	lib.CheckError(err)
 
 	// Parse server's reply
@@ -121,7 +122,8 @@ func main() {
 		lib.CheckError(err)
 
 		log.Println("Sending back decrypted secret.")
-		resp, err := lib.HTTPPost("http://localhost:8080/announce", jsonVal)
+		//resp, err := lib.HTTPPost("http://localhost:49371/announce", jsonVal)
+		resp, err := lib.HTTPPost("http://qvhgzxjkdchj2jl5.onion/announce", jsonVal)
 		lib.CheckError(err)
 		decoder = json.NewDecoder(resp.Body)
 		err = decoder.Decode(&m)

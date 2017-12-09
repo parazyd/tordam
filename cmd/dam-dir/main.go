@@ -15,7 +15,7 @@ import (
 )
 
 // ListenAddress controls where our HTTP API daemon is listening.
-const ListenAddress = "127.0.0.1:8080"
+const ListenAddress = "127.0.0.1:49371"
 
 // RedisAddress points us to our Redis instance.
 const RedisAddress = "127.0.0.1:6379"
