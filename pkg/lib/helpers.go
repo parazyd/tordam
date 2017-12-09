@@ -61,11 +61,11 @@ func ValidateReq(req map[string]string, pubkey string) ([]byte, bool) {
 	if len(re.FindString(req["address"])) != 22 {
 		return nil, false
 	}
+	log.Println(req["address"], "seems valid")
 
 	if len(pubkey) == 0 {
 		// Address is valid, we try to fetch its pubkey from a HSDir
 		cnt := 0
-		log.Println(req["address"], "seems valid")
 		for { // We try until we have it.
 			cnt++
 			if cnt > 10 {
