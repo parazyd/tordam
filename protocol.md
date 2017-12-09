@@ -4,7 +4,7 @@ Tor-DAM Protocol
 Abstract
 --------
 
-* Every DECODE node can be an opt-in directory.
+* Every node can be an opt-in directory.
   * This implies running the directory daemon on the node.
 * Every directory has a HTTP API allowing to list other nodes and
   announce new ones.
@@ -13,7 +13,7 @@ Abstract
   * It is possible to make this random enough once there are at least 6
     nodes in the network.
 * A node announces itself to directories by sending a JSON-formatted
-  HTTP POST request to one or more active DECODE nodes/directories.
+  HTTP POST request to one or more active nodes/directories.
   * Once the POST request is received, the directory will validate the
     request and return a secret encrypted with the requester's private
 	key.
@@ -30,9 +30,9 @@ Protocol
 --------
 
 A node announcing itself has to do a JSON-formatted HTTP POST request
-to one or more active DECODE directories with the format explained
-below. N.B. The strings shown in this document might not be valid, but
-they represent a correct example.
+to one or more active directories with the format explained below.
+N.B. The strings shown in this document might not be valid, but they
+represent a correct example.
 
 * `type` reflects the type of the node (currently just a placeholder)
 * `address` holds the address of the Tor hidden service
@@ -47,7 +47,7 @@ they represent a correct example.
 {
   "type": "node",
   "address": "qzhpi3jsbuvndnaw.onion",
-  "message": "I am a DECODE node!",
+  "message": "I am a node!",
   "signature": "ACkwtGGedX1ibHnlwtHlgJYndEMu0HhJaK3DLnH1B+r8/xx7jNDerOU7zrZVuzvf5mH9aZyHAOSHleaD52CsbT3lZrsrVWh4sVsJCD9VbEKuuPV/hx+T8f385V5dv2nDvBtJP32eQhwAxKz8YQvBjQOX8Y/o13vq+bxnxLd1j7g=",
   "secret": ""
 }
@@ -79,7 +79,7 @@ will again contained the data that was sent the first time as well:
 {
   "type": "node",
   "address": "qzhpi3jsbuvndnaw.onion",
-  "message": "I am a DECODE node!",
+  "message": "I am a node!",
   "signature": "ACkwtGGedX1ibHnlwtHlgJYndEMu0HhJaK3DLnH1B+r8/xx7jNDerOU7zrZVuzvf5mH9aZyHAOSHleaD52CsbT3lZrsrVWh4sVsJCD9VbEKuuPV/hx+T8f385V5dv2nDvBtJP32eQhwAxKz8YQvBjQOX8Y/o13vq+bxnxLd1j7g=",
   "secret": "NzN1amZoeTUvc3V1OTE5KDkzOTQ4NTc2Z3Vyaj8/Pz9tbTU0NyY3eWR1ZWtqdmJza2sxOSg5NzNAOTg0Mgo="
 }
@@ -93,7 +93,7 @@ complete the handshake by welcoming the client into the network:
 
 ```
 {
-	"secret": "Welcome to the DECODE network!"
+	"secret": "Welcome to the DAM network!"
 }
 ```
 

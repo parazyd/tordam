@@ -1,7 +1,8 @@
-Tor-DECODE Announce Mechanism (Tor-DAM)
-=======================================
+Tor Distributed Announce Mechanism (Tor DAM)
+============================================
 
-Protocol and tooling for finding DECODE nodes in the Tor network.
+Protocol and tooling for mapping machines in the Tor network running
+this software.
 
 
 Installation

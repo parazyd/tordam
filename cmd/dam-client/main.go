@@ -20,13 +20,13 @@ import (
 const Bits = 1024
 
 // Privpath holds the path of where our private key is.
-const Privpath = "/tmp/decode-private.key"
+const Privpath = "/tmp/dam-private.key"
 
 // Pubpath holds the path of where our public key is.
-//const Pubpath = "/tmp/decode-public.pub"
+//const Pubpath = "/tmp/dam-public.pub"
 
 // Postmsg holds the message we are signing with our private key.
-const Postmsg = "I am a DECODE node!"
+const Postmsg = "I am a DAM node!"
 
 type msgStruct struct {
 	Secret string
@@ -116,7 +116,7 @@ func main() {
 
 	// Start up the hidden service
 	log.Println("Starting up the hidden service...")
-	cmd := exec.Command("decodehs.py", Privpath)
+	cmd := exec.Command("damhs.py", Privpath)
 	stdout, err := cmd.StdoutPipe()
 	lib.CheckError(err)
 

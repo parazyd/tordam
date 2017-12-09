@@ -151,7 +151,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		if correct {
 			log.Printf("Welcoming %s to the network\n", n.Address)
 			ret := map[string]string{
-				"secret": "Welcome to the DECODE network!",
+				"secret": "Welcome to the DAM network!",
 			}
 			n.Valid = 0
 			jsonVal, err := json.Marshal(ret)

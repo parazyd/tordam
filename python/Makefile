@@ -3,7 +3,7 @@
 PREFIX ?= /usr/local
 
 BIN =\
-	decodehs.py \
+	damhs.py \
 	dirauth.py
 
 all:
