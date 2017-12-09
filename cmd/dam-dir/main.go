@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"sync"
 	"time"
@@ -14,6 +15,9 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/parazyd/tor-dam/pkg/lib"
 )
+
+// Cwd holds the path to the directory where we will Chdir on startup.
+var Cwd = os.Getenv("HOME") + "/.dam"
 
 // ListenAddress controls where our HTTP API daemon is listening.
 const ListenAddress = "127.0.0.1:49371"
@@ -181,8 +185,15 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 func main() {
 	var wg sync.WaitGroup
 
-	_, err := RedisCli.Ping().Result()
-	if err != nil {
+	if _, err := os.Stat(Cwd); os.IsNotExist(err) {
+		err := os.Mkdir(Cwd, 0700)
+		lib.CheckError(err)
+	}
+	log.Println("Chdir to", Cwd)
+	err := os.Chdir(Cwd)
+	lib.CheckError(err)
+
+	if _, err := RedisCli.Ping().Result(); err != nil {
 		// We assume redis is not running. Start it up.
 		startRedis()
 	}

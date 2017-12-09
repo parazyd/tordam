@@ -16,14 +16,14 @@ import (
 	"github.com/parazyd/tor-dam/pkg/lib"
 )
 
+// Cwd holds the path to the directory where we will Chdir on startup.
+var Cwd = os.Getenv("HOME") + "/.dam"
+
 // Bits hold the size of our RSA private key. Tor standard is 1024.
 const Bits = 1024
 
-// Privpath holds the path of where our private key is.
-const Privpath = "/tmp/dam-private.key"
-
-// Pubpath holds the path of where our public key is.
-//const Pubpath = "/tmp/dam-public.pub"
+// Privpath holds the name of where our private key is.
+const Privpath = "dam-private.key"
 
 // Postmsg holds the message we are signing with our private key.
 const Postmsg = "I am a DAM node!"
@@ -107,6 +107,14 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 }
 
 func main() {
+	if _, err := os.Stat(Cwd); os.IsNotExist(err) {
+		err := os.Mkdir(Cwd, 0700)
+		lib.CheckError(err)
+	}
+	log.Println("Chdir to", Cwd)
+	err := os.Chdir(Cwd)
+	lib.CheckError(err)
+
 	if _, err := os.Stat(Privpath); os.IsNotExist(err) {
 		key, err := lib.GenRsa(Bits)
 		lib.CheckError(err)
