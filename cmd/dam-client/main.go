@@ -4,6 +4,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
 	"log"
@@ -28,6 +29,80 @@ const Postmsg = "I am a DECODE node!"
 
 type msgStruct struct {
 	Secret string
+}
+
+func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool, error) {
+	msg, err := json.Marshal(vals)
+	if err != nil {
+		return false, err
+	}
+
+	if dir == "localhost" {
+		// Modify the string if we are authenticating to ourself.
+		dir = "localhost:49371"
+	}
+
+	log.Println("Announcing keypair to:", dir)
+	resp, err := lib.HTTPPost("http://"+dir+"/announce", msg)
+	if err != nil {
+		return false, err
+	}
+
+	// Parse server's reply
+	var m msgStruct
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&m)
+	if err != nil {
+		return false, err
+	}
+
+	if resp.StatusCode == 500 {
+		log.Printf("%s: Fail. Reply: %s\n", dir, m.Secret)
+		return false, nil
+	}
+
+	if resp.StatusCode == 200 {
+		log.Printf("%s: Success. 1/2 handshake valid.\n", dir)
+		decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
+		if err != nil {
+			return false, err
+		}
+
+		decrypted, err := lib.DecryptMsg([]byte(decodedSecret), privkey)
+		if err != nil {
+			return false, err
+		}
+
+		decryptedEncode := base64.StdEncoding.EncodeToString(decrypted)
+
+		vals["secret"] = decryptedEncode
+		msg, err := json.Marshal(vals)
+		if err != nil {
+			return false, err
+		}
+
+		log.Printf("%s: Success. Sending back decrypted secret\n", dir)
+		resp, err := lib.HTTPPost("http://"+dir+"/announce", msg)
+		if err != nil {
+			return false, err
+		}
+		decoder = json.NewDecoder(resp.Body)
+		err = decoder.Decode(&m)
+		if err != nil {
+			return false, err
+		}
+
+		if resp.StatusCode == 200 {
+			log.Printf("%s: Success. 2/2 handshake valid.\n", dir)
+			log.Printf("%s: Reply: %s\n", dir, m.Secret)
+			return true, nil
+		} else {
+			log.Printf("%s: Fail. Reply: %s\n", dir, m.Secret)
+			return false, nil
+		}
+	}
+
+	return false, nil
 }
 
 func main() {
@@ -80,62 +155,29 @@ func main() {
 	onionAddr, err := lib.OnionFromPubkey(key.PublicKey)
 	lib.CheckError(err)
 
-	vals := map[string]string{
+	nodevals := map[string]string{
 		"nodetype":  "node",
 		"address":   string(onionAddr),
 		"message":   Postmsg,
 		"signature": encodedSig,
 		"secret":    "",
 	}
-	jsonVal, err := json.Marshal(vals)
-	lib.CheckError(err)
 
-	log.Println("Announcing keypair for:", vals["address"])
-	log.Println("Sending request")
-	//resp, err := lib.HTTPPost("http://localhost:49371/announce", jsonVal)
-	resp, err := lib.HTTPPost("http://qvhgzxjkdchj2jl5.onion/announce", jsonVal)
-	lib.CheckError(err)
+	var ann = 0 // Track of how many successful authentications
 
-	// Parse server's reply
-	var m msgStruct
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&m)
-	lib.CheckError(err)
-
-	if resp.StatusCode == 500 {
-		log.Println("Unsuccessful reply from directory.")
-		log.Fatalln("Server replied:", m.Secret)
-	}
-
-	if resp.StatusCode == 200 {
-		log.Println("Successful reply from directory.")
-		decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
+	dirs := []string{"qvhgzxjkdchj2jl5.onion", "localhost"}
+	for _, i := range dirs {
+		valid, err := announce(i, nodevals, key)
 		lib.CheckError(err)
-
-		decrypted, err := lib.DecryptMsg([]byte(decodedSecret), key)
-		lib.CheckError(err)
-
-		decryptedEncode := base64.StdEncoding.EncodeToString(decrypted)
-
-		vals["secret"] = decryptedEncode
-		jsonVal, err := json.Marshal(vals)
-		lib.CheckError(err)
-
-		log.Println("Sending back decrypted secret.")
-		//resp, err := lib.HTTPPost("http://localhost:49371/announce", jsonVal)
-		resp, err := lib.HTTPPost("http://qvhgzxjkdchj2jl5.onion/announce", jsonVal)
-		lib.CheckError(err)
-		decoder = json.NewDecoder(resp.Body)
-		err = decoder.Decode(&m)
-		lib.CheckError(err)
-
-		if resp.StatusCode == 200 {
-			log.Println("Successfully authenticated!")
-			log.Println("Server replied:", m.Secret)
-		} else {
-			log.Println("Unsuccessful reply from directory.")
-			log.Fatalln("Server replied:", m.Secret)
+		if valid {
+			ann++
 		}
+	}
+	if ann > 0 {
+		log.Printf("Successfully authenticated with %d nodes.\n", ann)
+	} else {
+		cmd.Process.Kill()
+		log.Fatalln("No successful authentications. Exiting.")
 	}
 
 	err = cmd.Wait() // Hidden service Python daemon
