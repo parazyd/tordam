@@ -7,8 +7,10 @@ all:
 
 install:
 	@make -C python install
+	@make -C contrib install
 
 uninstall:
 	@make -C python uninstall
+	@make -C contrib uninstall
 
 .PHONY: all install uninstall
