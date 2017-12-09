@@ -102,10 +102,10 @@ func ValidateReq(req map[string]string, pubkey string) ([]byte, bool) {
 	// Validate signature.
 	msg := []byte(req["message"])
 	sig := []byte(req["signature"])
-	pub, err := ParsePubkey([]byte(pubkey))
+	pub, err := ParsePubkeyRsa([]byte(pubkey))
 	CheckError(err)
 
-	val, err := VerifyMsg(msg, sig, pub)
+	val, err := VerifyMsgRsa(msg, sig, pub)
 	CheckError(err)
 	if val != true {
 		return nil, false

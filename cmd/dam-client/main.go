@@ -19,8 +19,8 @@ import (
 // Cwd holds the path to the directory where we will Chdir on startup.
 var Cwd = os.Getenv("HOME") + "/.dam"
 
-// Bits hold the size of our RSA private key. Tor standard is 1024.
-const Bits = 1024
+// RsaBits holds the size of our RSA private key. Tor standard is 1024.
+const RsaBits = 1024
 
 // Privpath holds the name of where our private key is.
 const Privpath = "dam-private.key"
@@ -69,7 +69,7 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 			return false, err
 		}
 
-		decrypted, err := lib.DecryptMsg([]byte(decodedSecret), privkey)
+		decrypted, err := lib.DecryptMsgRsa([]byte(decodedSecret), privkey)
 		if err != nil {
 			return false, err
 		}
@@ -116,9 +116,9 @@ func main() {
 	lib.CheckError(err)
 
 	if _, err := os.Stat(Privpath); os.IsNotExist(err) {
-		key, err := lib.GenRsa(Bits)
+		key, err := lib.GenRsa(RsaBits)
 		lib.CheckError(err)
-		_, err = lib.SavePriv(Privpath, key)
+		_, err = lib.SavePrivRsa(Privpath, key)
 		lib.CheckError(err)
 	}
 
@@ -154,14 +154,14 @@ func main() {
 		}
 	}
 
-	key, err := lib.LoadKeyFromFile(Privpath)
+	key, err := lib.LoadRsaKeyFromFile(Privpath)
 	lib.CheckError(err)
 
-	sig, err := lib.SignMsg([]byte(Postmsg), key)
+	sig, err := lib.SignMsgRsa([]byte(Postmsg), key)
 	lib.CheckError(err)
 	encodedSig := base64.StdEncoding.EncodeToString(sig)
 
-	onionAddr, err := lib.OnionFromPubkey(key.PublicKey)
+	onionAddr, err := lib.OnionFromPubkeyRsa(key.PublicKey)
 	lib.CheckError(err)
 
 	nodevals := map[string]string{

@@ -100,7 +100,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	pubkey, err := lib.ParsePubkey(pkey)
+	pubkey, err := lib.ParsePubkeyRsa(pkey)
 	lib.CheckError(err)
 
 	n.Pubkey = string(pkey)
@@ -113,7 +113,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		randString, err := lib.GenRandomASCII(64)
 		lib.CheckError(err)
 
-		secret, err := lib.EncryptMsg([]byte(randString), pubkey)
+		secret, err := lib.EncryptMsgRsa([]byte(randString), pubkey)
 		lib.CheckError(err)
 
 		encodedSecret := base64.StdEncoding.EncodeToString(secret)
