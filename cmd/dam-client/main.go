@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 
 	"github.com/parazyd/tor-dam/pkg/lib"
@@ -166,13 +167,21 @@ func main() {
 	var ann = 0 // Track of how many successful authentications
 
 	dirs := []string{"qvhgzxjkdchj2jl5.onion", "localhost"}
+
+	var wg sync.WaitGroup
 	for _, i := range dirs {
-		valid, err := announce(i, nodevals, key)
-		lib.CheckError(err)
-		if valid {
-			ann++
-		}
+		wg.Add(1)
+		go func(x string) {
+			valid, err := announce(x, nodevals, key)
+			lib.CheckError(err)
+			if valid {
+				ann++
+			}
+			wg.Done()
+		}(i)
 	}
+	wg.Wait()
+
 	if ann > 0 {
 		log.Printf("Successfully authenticated with %d nodes.\n", ann)
 	} else {
