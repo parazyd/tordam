@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os/exec"
 	"sync"
 	"time"
 
@@ -37,6 +38,18 @@ type nodeStruct struct {
 	Firstseen int64
 	Lastseen  int64
 	Valid     int64
+}
+
+func startRedis() {
+	log.Println("Staring up redis-server...")
+	cmd := exec.Command("redis-server", "/usr/local/share/tor-dam/redis.conf")
+	err := cmd.Start()
+	lib.CheckError(err)
+
+	time.Sleep(500 * time.Millisecond)
+
+	_, err = RedisCli.Ping().Result()
+	lib.CheckError(err)
 }
 
 func handlePost(rw http.ResponseWriter, request *http.Request) {
@@ -169,7 +182,10 @@ func main() {
 	var wg sync.WaitGroup
 
 	_, err := RedisCli.Ping().Result()
-	lib.CheckError(err)
+	if err != nil {
+		// We assume redis is not running. Start it up.
+		startRedis()
+	}
 
 	http.HandleFunc("/announce", handlePost)
 
