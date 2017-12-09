@@ -3,7 +3,7 @@
 """
 Retrieves and prints a hidden service's public key to stdout.
 
-Usage: dirauth.py <foo.onion>
+Usage: damauth.py <foo.onion>
 """
 
 from sys import argv, stdout
