@@ -155,22 +155,53 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	if len(req["secret"]) == 88 {
+	if len(req["secret"]) == 88 && len(req["message"]) == 88 {
 		// Client sent a decrypted secret.
 		var correct = false
 		localSec, err := RedisCli.HGet(n.Address, "secret").Result()
 		lib.CheckError(err)
 
-		if localSec == req["secret"] {
+		if localSec == req["secret"] && localSec == req["message"] {
 			log.Println("Secrets match!")
 			correct = true
+		} else {
+			log.Println("Secrets don't match!")
+			correct = false
 		}
+
+		msg := []byte(req["message"])
+		sig := []byte(req["signature"])
+		pub, err := lib.ParsePubkeyRsa([]byte(n.Pubkey))
+		lib.CheckError(err)
+		val, err := lib.VerifyMsgRsa(msg, sig, pub)
+		lib.CheckError(err)
+		if val {
+			log.Println("Signature valid!")
+			correct = true
+		} else {
+			log.Println("Signature invalid!")
+			correct = false
+		}
+
 		if correct {
 			log.Printf("Welcoming %s to the network\n", n.Address)
 			ret := map[string]string{
 				"secret": "Welcome to the DAM network!",
 			}
-			n.Valid = 0
+			jsonVal, err := json.Marshal(ret)
+			lib.CheckError(err)
+
+			rw.Header().Set("Content-Type", "application/json")
+			rw.WriteHeader(http.StatusOK)
+			rw.Write(jsonVal)
+			return
+		} else {
+			// Delete it from redis.
+			_, err := RedisCli.Del(n.Address).Result()
+			lib.CheckError(err)
+			ret := map[string]string{
+				"secret": "Verification failed. Bye.",
+			}
 			jsonVal, err := json.Marshal(ret)
 			lib.CheckError(err)
 

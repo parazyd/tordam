@@ -76,7 +76,13 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 
 		decryptedEncode := base64.StdEncoding.EncodeToString(decrypted)
 
+		sig, err := lib.SignMsgRsa([]byte(decryptedEncode), privkey)
+		lib.CheckError(err)
+		encodedSig := base64.StdEncoding.EncodeToString(sig)
+
 		vals["secret"] = decryptedEncode
+		vals["message"] = decryptedEncode
+		vals["signature"] = encodedSig
 		msg, err := json.Marshal(vals)
 		if err != nil {
 			return false, err
