@@ -50,7 +50,7 @@ func FetchHSPubkey(addr string) string {
 }
 
 // ValidateReq validates our given request against some checks.
-func ValidateReq(req map[string]string) ([]byte, bool) {
+func ValidateReq(req map[string]string, pubkey string) ([]byte, bool) {
 	// Validate nodetype.
 	if req["nodetype"] != "node" {
 		return nil, false
@@ -61,24 +61,26 @@ func ValidateReq(req map[string]string) ([]byte, bool) {
 	if len(re.FindString(req["address"])) != 22 {
 		return nil, false
 	}
-	// Address is valid, we try to fetch its pubkey from a HSDir
-	var pubkey string
-	var cnt = 0
-	log.Println(req["address"], "seems valid")
-	for { // We try until we have it.
-		cnt++
-		if cnt > 10 {
-			// We probably can't get a good HSDir. The client shall retry
-			// later on.
-			return []byte("Couldn't get a descriptor. Try later."), false
+
+	if len(pubkey) == 0 {
+		// Address is valid, we try to fetch its pubkey from a HSDir
+		cnt := 0
+		log.Println(req["address"], "seems valid")
+		for { // We try until we have it.
+			cnt++
+			if cnt > 10 {
+				// We probably can't get a good HSDir. The client shall retry
+				// later on.
+				return []byte("Couldn't get a descriptor. Try later."), false
+			}
+			pubkey = FetchHSPubkey(req["address"])
+			if strings.HasPrefix(pubkey, "-----BEGIN RSA PUBLIC KEY-----") &&
+				strings.HasSuffix(pubkey, "-----END RSA PUBLIC KEY-----") {
+				log.Println("Got descriptor!")
+				break
+			}
+			time.Sleep(2000 * time.Millisecond)
 		}
-		pubkey = FetchHSPubkey(req["address"])
-		if strings.HasPrefix(pubkey, "-----BEGIN RSA PUBLIC KEY-----") &&
-			strings.HasSuffix(pubkey, "-----END RSA PUBLIC KEY-----") {
-			log.Println("Got descriptor!")
-			break
-		}
-		time.Sleep(2000 * time.Millisecond)
 	}
 	// Validate signature.
 	msg := []byte(req["message"])

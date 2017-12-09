@@ -57,7 +57,17 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		"secret":    n.Secret,
 	}
 
-	pkey, valid := lib.ValidateReq(req)
+	// Check if we have seen this node already.
+	ex, err := RedisCli.Exists(n.Address).Result()
+	lib.CheckError(err)
+	var pub = ""
+	if ex == 1 {
+		res, err := RedisCli.HGet(n.Address, "pubkey").Result()
+		pub = string(res)
+		lib.CheckError(err)
+	}
+
+	pkey, valid := lib.ValidateReq(req, pub)
 	if !(valid) && pkey == nil {
 		log.Fatalln("Request is not valid.")
 	} else if !(valid) && pkey != nil {
