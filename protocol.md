@@ -1,4 +1,4 @@
-Tor-DAM Protocol
+Tor DAM Protocol
 ================
 
 Abstract
@@ -18,9 +18,10 @@ Abstract
     request and return a secret encrypted with the requester's private
 	key.
   * The requester will try to decrypt this secret, and return it plain
-    back to the directory, so the directory can confirm the requester is
-	in actual possession of the private key.
-* Tor-DAM **does not validate** if a node is malicious or not. This is
+    back to the directory, along with a cryptographic signature, so the
+	directory can confirm the requester is in actual possession of the
+	private key.
+* Tor DAM **does not validate** if a node is malicious or not. This is
   a layer that has to be established on top. Tor-DAM is just the entry
   point into the network.
 * A node can become a directory once it is proven valid (not malicious).
@@ -46,9 +47,9 @@ represent a correct example.
 ```
 {
   "type": "node",
-  "address": "qzhpi3jsbuvndnaw.onion",
-  "message": "I am a node!",
-  "signature": "ACkwtGGedX1ibHnlwtHlgJYndEMu0HhJaK3DLnH1B+r8/xx7jNDerOU7zrZVuzvf5mH9aZyHAOSHleaD52CsbT3lZrsrVWh4sVsJCD9VbEKuuPV/hx+T8f385V5dv2nDvBtJP32eQhwAxKz8YQvBjQOX8Y/o13vq+bxnxLd1j7g=",
+  "address": "22mobp7vrb7a4gt2.onion",
+  "message": "I am a DAM node!",
+  "signature": "BuB/Dv8E44CLzUX88K2Ab0lUNS9A0GSkHPtrFNNWZMihPMWN0ORhwMZBRnMJ8woPO3wSONBvEvaCXA2hvsVrUJTa+hnevQNyQXCRhdTVVuVXEpjyFzkMamxb6InrGqbsGGkEUqGMSr9aaQ85N02MMrM6T6JuyqSSssFg2xuO+P4=",
   "secret": ""
 }
 ```
@@ -66,22 +67,28 @@ will then be encoded using base64 and sent back to the client:
 
 ```
 {
-	"secret": "NzN1amZoeTUvc3V1OTE5KDkzOTQ4NTc2Z3VyanNrbnZtbTU0NyY3eWR1ZWtqdmJza2sxOSg5NzNAOTg0Mgo="
+  "secret": "eP07xSZWlDdK4+AL0WUkIA3OnVTc3sEgu4MUqGr43TUXaJLfAILvWxKihPxytumBmdJ4LC45LsrdDuhmUSmZZMJxxiLmB4Gf3zoWa1DmStdc147VsGpexY05jaJUZlbmG0kkTFdPmdcKNbis5xfRn8Duo1e5bOPj41lIopwiil0="
 }
 ```
 
 The client will try to decode and decrypt this secret, and send it back
 to the directory to complete its part of the handshake. The POST request
-will again contained the data that was sent the first time as well:
+this time will contain the following data:
+* `type` reflects the type of the node (currently just a placeholder)
+* `address` holds the address of the Tor hidden service
+* `message` is the decrypted and base64 encoded secret that the server
+  had just sent us.
+* `signature` is the base64 encoded signature of the above secret.
+* `secret` is a copy of `message` here.
 
 
 ```
 {
   "type": "node",
-  "address": "qzhpi3jsbuvndnaw.onion",
-  "message": "I am a node!",
-  "signature": "ACkwtGGedX1ibHnlwtHlgJYndEMu0HhJaK3DLnH1B+r8/xx7jNDerOU7zrZVuzvf5mH9aZyHAOSHleaD52CsbT3lZrsrVWh4sVsJCD9VbEKuuPV/hx+T8f385V5dv2nDvBtJP32eQhwAxKz8YQvBjQOX8Y/o13vq+bxnxLd1j7g=",
-  "secret": "NzN1amZoeTUvc3V1OTE5KDkzOTQ4NTc2Z3Vyaj8/Pz9tbTU0NyY3eWR1ZWtqdmJza2sxOSg5NzNAOTg0Mgo="
+  "address": "22mobp7vrb7a4gt2.onion",
+  "message": "ZShhYHYsRGNLOTZ6YUwwP3ZXPnxhQiR9UFVWfmk5TG56TEtLb04vMms+OTIrLlQ7aS4rflR3V041RG5Je0tnYw==",
+  "signature": "L1N+VEi3T3aZaYksAy1+0UMoYn7B3Gapfk0dJzOUxUtUYVhj84TgfYeDnADNYrt5UK9hN/lCTIhsM6zPO7mSjQI43l3dKvMIikqQDwNey/XaokyPI4/oKrMoGQnu8E8UmHmI1pFvwdO5EQQaKbi90qWNj93KB/NlTwqD9Ir4blY=",
+  "secret": "ZShhYHYsRGNLOTZ6YUwwP3ZXPnxhQiR9UFVWfmk5TG56TEtLb04vMms+OTIrLlQ7aS4rflR3V041RG5Je0tnYw=="
 }
 ```
 
@@ -93,7 +100,7 @@ complete the handshake by welcoming the client into the network:
 
 ```
 {
-	"secret": "Welcome to the DAM network!"
+  "secret": "Welcome to the DAM network!"
 }
 ```
 
