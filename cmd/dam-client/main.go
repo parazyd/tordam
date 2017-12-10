@@ -117,7 +117,6 @@ func main() {
 		err := os.Mkdir(Cwd, 0700)
 		lib.CheckError(err)
 	}
-	log.Println("Chdir to", Cwd)
 	err := os.Chdir(Cwd)
 	lib.CheckError(err)
 
