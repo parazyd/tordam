@@ -45,7 +45,7 @@ type nodeStruct struct {
 }
 
 func startRedis() {
-	log.Println("Staring up redis-server...")
+	log.Println("Starting up redis-server...")
 	cmd := exec.Command("redis-server", "/usr/local/share/tor-dam/redis.conf")
 	err := cmd.Start()
 	lib.CheckError(err)
@@ -57,14 +57,24 @@ func startRedis() {
 }
 
 func handlePost(rw http.ResponseWriter, request *http.Request) {
+	if request.Method != "POST" || request.Header["Content-Type"][0] != "application/json" {
+		return
+	}
+
 	decoder := json.NewDecoder(request.Body)
 
 	var n nodeStruct
 	err := decoder.Decode(&n)
-	lib.CheckError(err)
+	if err != nil {
+		log.Println("Failed decoding request:", err)
+		return
+	}
 
 	decSig, err := base64.StdEncoding.DecodeString(n.Signature)
-	lib.CheckError(err)
+	if err != nil {
+		log.Println("Failed decoding signature:", err)
+		return
+	}
 
 	req := map[string]string{
 		"nodetype":  n.Nodetype,
@@ -86,7 +96,14 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 
 	pkey, valid := lib.ValidateReq(req, pub)
 	if !(valid) && pkey == nil {
-		log.Fatalln("Request is not valid.")
+		ret := map[string]string{
+			"secret": "Request is not valid.",
+		}
+		jsonVal, err := json.Marshal(ret)
+		lib.CheckError(err)
+		rw.Header().Set("Content-Type", "application/json")
+		rw.Write(jsonVal)
+		return
 	} else if !(valid) && pkey != nil {
 		// We couldn't get a descriptor.
 		ret := map[string]string{
@@ -213,6 +230,11 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	}
 }
 
+func handleElse(rw http.ResponseWriter, request *http.Request) {
+	// noop for anything that isn't /announce.
+	return
+}
+
 func main() {
 	var wg sync.WaitGroup
 
@@ -220,7 +242,6 @@ func main() {
 		err := os.Mkdir(Cwd, 0700)
 		lib.CheckError(err)
 	}
-	log.Println("Chdir to", Cwd)
 	err := os.Chdir(Cwd)
 	lib.CheckError(err)
 
@@ -230,6 +251,7 @@ func main() {
 	}
 
 	http.HandleFunc("/announce", handlePost)
+	http.HandleFunc("/", handleElse)
 
 	wg.Add(1)
 	go http.ListenAndServe(ListenAddress, nil)

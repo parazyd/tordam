@@ -38,9 +38,9 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 		return false, err
 	}
 
-	if dir == "localhost" {
+	if dir == "localhost" || dir == "127.0.0.1" {
 		// Modify the string if we are authenticating to ourself.
-		dir = "localhost:49371"
+		dir += ":49371"
 	}
 
 	log.Println("Announcing keypair to:", dir)
@@ -180,7 +180,7 @@ func main() {
 
 	var ann = 0 // Track of how many successful authentications
 
-	dirs := []string{"qvhgzxjkdchj2jl5.onion", "localhost"}
+	dirs := []string{"3mb6b3exknytbqdg.onion", "localhost"}
 
 	var wg sync.WaitGroup
 	for _, i := range dirs {
