@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/parazyd/tor-dam/pkg/lib"
+	lib "github.com/parazyd/tor-dam/pkg/damlib"
 )
 
 // Cwd holds the path to the directory where we will Chdir on startup.
