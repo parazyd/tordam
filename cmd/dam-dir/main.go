@@ -86,6 +86,8 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		len(n.Message) == 0 || len(n.Signature) == 0 {
 		return
 	}
+	// TODO: When a node wants to promote itself from something it already was,
+	// what to do?
 	switch n.Nodetype {
 	case "node":
 		log.Println("Client of type:", n.Nodetype)
