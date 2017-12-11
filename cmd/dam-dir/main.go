@@ -196,21 +196,29 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 			correct = false
 		}
 
-		msg := []byte(req["message"])
-		sig := []byte(req["signature"])
-		pub, err := lib.ParsePubkeyRsa([]byte(n.Pubkey))
-		lib.CheckError(err)
-		val, err := lib.VerifyMsgRsa(msg, sig, pub)
-		lib.CheckError(err)
-		if val {
-			log.Println("Signature valid!")
-			correct = true
-		} else {
-			log.Println("Signature invalid!")
-			correct = false
+		if correct {
+			msg := []byte(req["message"])
+			sig := []byte(req["signature"])
+			pub, err := lib.ParsePubkeyRsa([]byte(n.Pubkey))
+			lib.CheckError(err)
+			val, err := lib.VerifyMsgRsa(msg, sig, pub)
+			lib.CheckError(err)
+			if val {
+				log.Println("Signature valid!")
+				correct = true
+			} else {
+				log.Println("Signature invalid!")
+				correct = false
+			}
 		}
 
 		if correct {
+			// Replace the secret in redis to prevent reuse.
+			randString, err := lib.GenRandomASCII(64)
+			lib.CheckError(err)
+			encoded := base64.StdEncoding.EncodeToString([]byte(randString))
+			_, err = RedisCli.HSet(n.Address, "secret", encoded).Result()
+			lib.CheckError(err)
 			log.Printf("Welcoming %s to the network\n", n.Address)
 			ret := map[string]string{"secret": "Welcome to the DAM network!"}
 			if err := postback(rw, ret, 200); err != nil {
@@ -218,9 +226,10 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 			}
 			return
 		} else {
-			// Delete it from redis.
+			// Delete it all from redis.
 			_, err := RedisCli.Del(n.Address).Result()
 			lib.CheckError(err)
+			log.Printf("Verifying %s failed.\n", n.Address)
 			ret := map[string]string{"secret": "Verification failed. Bye."}
 			if err := postback(rw, ret, 400); err != nil {
 				lib.CheckError(err)
