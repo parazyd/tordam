@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 	//"os/exec"
-	//"strings"
+	"strings"
 	//"syscall"
 	"testing"
 	//"time"
@@ -191,6 +191,52 @@ func TestInvalidAddressFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 	if m.Secret == "Request is not valid." {
+		t.Log("Server replied:", m.Secret)
+	} else {
+		t.Fatal("Server replied:", m.Secret)
+	}
+}
+
+func TestInvalidMessageFirst(t *testing.T) {
+	t.SkipNow()
+	// Valid message and signature, but the signature did not sign this message.
+	vals := ValidFirst
+	vals["message"] = "foobar"
+	resp, err := postReq(vals)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != 400 {
+		t.Fatal("Server did not respond with HTTP 400")
+	}
+	m, err := getRespText(resp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.Secret == "Request is not valid." {
+		t.Log("Server replied:", m.Secret)
+	} else {
+		t.Fatal("Server replied:", m.Secret)
+	}
+}
+
+func TestInvalidSignatureFirst(t *testing.T) {
+	t.SkipNow()
+	// Invalid signature format.
+	vals := ValidFirst
+	vals["signature"] = "ThisIsNotBase64=="
+	resp, err := postReq(vals)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != 400 {
+		t.Fatal("Server did not respond with HTTP 400")
+	}
+	m, err := getRespText(resp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.HasPrefix(m.Secret, "illegal base64 data at input byte ") {
 		t.Log("Server replied:", m.Secret)
 	} else {
 		t.Fatal("Server replied:", m.Secret)
