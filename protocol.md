@@ -35,7 +35,7 @@ to one or more active directories with the format explained below.
 N.B. The strings shown in this document might not be valid, but they
 represent a correct example.
 
-* `type` reflects the type of the node (currently just a placeholder)
+* `type` reflects the type of the node (node/directory)
 * `address` holds the address of the Tor hidden service
 * `message` is the message that has to be signed using the private key
   of this same hidden service.
@@ -74,7 +74,7 @@ will then be encoded using base64 and sent back to the client:
 The client will try to decode and decrypt this secret, and send it back
 to the directory to complete its part of the handshake. The POST request
 this time will contain the following data:
-* `type` reflects the type of the node (currently just a placeholder)
+* `type` reflects the type of the node (node/directory)
 * `address` holds the address of the Tor hidden service
 * `message` is the decrypted and base64 encoded secret that the server
   had just sent us.

@@ -86,6 +86,14 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		len(n.Message) == 0 || len(n.Signature) == 0 {
 		return
 	}
+	switch n.Nodetype {
+	case "node":
+		log.Println("Client of type:", n.Nodetype)
+	case "directory":
+		log.Println("Client of type:", n.Nodetype)
+	default:
+		return
+	}
 
 	decSig, err := base64.StdEncoding.DecodeString(n.Signature)
 	if err != nil {
