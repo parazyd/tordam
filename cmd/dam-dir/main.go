@@ -56,11 +56,23 @@ func startRedis() {
 	lib.CheckError(err)
 }
 
+func postback(rw http.ResponseWriter, data map[string]string, retCode int) error {
+	jsonVal, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	rw.Header().Set("Content-Type", "application/json")
+	rw.WriteHeader(retCode)
+	rw.Write(jsonVal)
+	return nil
+}
+
 func handlePost(rw http.ResponseWriter, request *http.Request) {
 	if request.Method != "POST" || request.Header["Content-Type"][0] != "application/json" {
 		return
 	}
 
+	var ret map[string]string
 	var n nodeStruct
 	decoder := json.NewDecoder(request.Body)
 	err := decoder.Decode(&n)
@@ -78,6 +90,10 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	decSig, err := base64.StdEncoding.DecodeString(n.Signature)
 	if err != nil {
 		log.Println("Failed decoding signature:", err)
+		ret = map[string]string{"secret": err.Error()}
+		if err := postback(rw, ret, 400); err != nil {
+			lib.CheckError(err)
+		}
 		return
 	}
 
@@ -101,24 +117,17 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 
 	pkey, valid := lib.ValidateReq(req, pub)
 	if !(valid) && pkey == nil {
-		ret := map[string]string{
-			"secret": "Request is not valid.",
+		ret := map[string]string{"secret": "Request is not valid."}
+		if err := postback(rw, ret, 400); err != nil {
+			lib.CheckError(err)
 		}
-		jsonVal, err := json.Marshal(ret)
-		lib.CheckError(err)
-		rw.Header().Set("Content-Type", "application/json")
-		rw.Write(jsonVal)
 		return
 	} else if !(valid) && pkey != nil {
 		// We couldn't get a descriptor.
-		ret := map[string]string{
-			"secret": string(pkey),
+		ret := map[string]string{"secret": string(pkey)}
+		if err := postback(rw, ret, 500); err != nil {
+			lib.CheckError(err)
 		}
-		jsonVal, err := json.Marshal(ret)
-		lib.CheckError(err)
-		rw.Header().Set("Content-Type", "application/json")
-		rw.WriteHeader(500)
-		rw.Write(jsonVal)
 		return
 	}
 
@@ -139,11 +148,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		lib.CheckError(err)
 
 		encodedSecret := base64.StdEncoding.EncodeToString(secret)
-		ret := map[string]string{
-			"secret": encodedSecret,
-		}
-		jsonVal, err := json.Marshal(ret)
-		lib.CheckError(err)
+		ret := map[string]string{"secret": encodedSecret}
 
 		// Check if we have seen this node already.
 		ex, err := RedisCli.Exists(n.Address).Result()
@@ -170,9 +175,9 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 
 		if redRet == "OK" {
 			log.Println("Returning encrypted secret to caller.")
-			rw.Header().Set("Content-Type", "application/json")
-			rw.WriteHeader(http.StatusOK)
-			rw.Write(jsonVal)
+			if err := postback(rw, ret, 200); err != nil {
+				lib.CheckError(err)
+			}
 			return
 		}
 	}
@@ -207,29 +212,19 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 
 		if correct {
 			log.Printf("Welcoming %s to the network\n", n.Address)
-			ret := map[string]string{
-				"secret": "Welcome to the DAM network!",
+			ret := map[string]string{"secret": "Welcome to the DAM network!"}
+			if err := postback(rw, ret, 200); err != nil {
+				lib.CheckError(err)
 			}
-			jsonVal, err := json.Marshal(ret)
-			lib.CheckError(err)
-
-			rw.Header().Set("Content-Type", "application/json")
-			rw.WriteHeader(http.StatusOK)
-			rw.Write(jsonVal)
 			return
 		} else {
 			// Delete it from redis.
 			_, err := RedisCli.Del(n.Address).Result()
 			lib.CheckError(err)
-			ret := map[string]string{
-				"secret": "Verification failed. Bye.",
+			ret := map[string]string{"secret": "Verification failed. Bye."}
+			if err := postback(rw, ret, 400); err != nil {
+				lib.CheckError(err)
 			}
-			jsonVal, err := json.Marshal(ret)
-			lib.CheckError(err)
-
-			rw.Header().Set("Content-Type", "application/json")
-			rw.WriteHeader(http.StatusOK)
-			rw.Write(jsonVal)
 			return
 		}
 	}
