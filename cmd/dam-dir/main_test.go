@@ -63,21 +63,29 @@ func firstAnnValid() (*http.Response, error) {
 func TestValidFirstHandshake(t *testing.T) {
 	resp, err := firstAnnValid()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
-	if resp.StatusCode != 200 {
-		t.Error("Server did not respond with HTTP 200")
+	if resp.StatusCode == 500 {
+		// Couldn't get a descriptor.
+		m, err := getRespText(resp)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Skipf("Server replied: %s\n", m.Secret)
+	} else if resp.StatusCode != 200 {
+		t.Log(resp.StatusCode)
+		t.Fatal("Server did not respond with HTTP 200")
 	}
 	m, err := getRespText(resp)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if len(decodedSecret) != 128 {
-		t.Error("decodedSecret is not of correct length.")
+		t.Fatal("decodedSecret is not of correct length.")
 	}
 	t.Log("Server replied:", m.Secret)
 }
@@ -85,31 +93,39 @@ func TestValidFirstHandshake(t *testing.T) {
 func TestValidSecondHandshake(t *testing.T) {
 	resp, err := firstAnnValid()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
-	if resp.StatusCode != 200 {
-		t.Error("Server did not respond with HTTP 200")
+	if resp.StatusCode == 500 {
+		// Couldn't get a descriptor.
+		m, err := getRespText(resp)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Skipf("Server replied: %s\n", m.Secret)
+	} else if resp.StatusCode != 200 {
+		t.Log(resp.StatusCode)
+		t.Fatal("Server did not respond with HTTP 200")
 	}
 	m, err := getRespText(resp)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if len(decodedSecret) != 128 {
-		t.Error("decodedSecret is not of correct length.")
+		t.Fatal("decodedSecret is not of correct length.")
 	}
 
 	// Second handshake starts here.
 	privkey, err := lib.LoadRsaKeyFromFile("./dam-private.key")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	decrypted, err := lib.DecryptMsgRsa([]byte(decodedSecret), privkey)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	decryptedEncode := base64.StdEncoding.EncodeToString(decrypted)
 	sig, err := lib.SignMsgRsa([]byte(decryptedEncode), privkey)
@@ -122,16 +138,16 @@ func TestValidSecondHandshake(t *testing.T) {
 
 	resp, err = postReq(vals)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	m, err = getRespText(resp)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if m.Secret == "Welcome to the DAM network!" {
 		t.Log("Server replied:", m.Secret)
 	} else {
-		t.Error(m.Secret)
+		t.Fatal(m.Secret)
 	}
 }
 
