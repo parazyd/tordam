@@ -92,6 +92,11 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	case "directory":
 		log.Println("Client of type:", n.Nodetype)
 	default:
+		log.Println("Invalid nodetype:", n.Nodetype)
+		ret = map[string]string{"secret": "Invalid nodetype."}
+		if err := postback(rw, ret, 400); err != nil {
+			lib.CheckError(err)
+		}
 		return
 	}
 
