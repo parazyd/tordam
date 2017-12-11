@@ -158,6 +158,7 @@ func VerifyMsgRsa(message []byte, signature []byte, pubkey *rsa.PublicKey) (bool
 	hashed := sha512.Sum512(message)
 	err := rsa.VerifyPKCS1v15(pubkey, crypto.SHA512, hashed[:], signature)
 	if err != nil {
+		log.Println("Signature invalid")
 		return false, err
 	}
 	log.Println("Signature valid")

@@ -82,6 +82,59 @@ func TestValidFirstHandshake(t *testing.T) {
 	t.Log("Server replied:", m.Secret)
 }
 
+func TestValidSecondHandshake(t *testing.T) {
+	resp, err := firstAnnValid()
+	if err != nil {
+		t.Error(err)
+	}
+	if resp.StatusCode != 200 {
+		t.Error("Server did not respond with HTTP 200")
+	}
+	m, err := getRespText(resp)
+	if err != nil {
+		t.Error(err)
+	}
+	decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(decodedSecret) != 128 {
+		t.Error("decodedSecret is not of correct length.")
+	}
+
+	// Second handshake starts here.
+	privkey, err := lib.LoadRsaKeyFromFile("./dam-private.key")
+	if err != nil {
+		t.Error(err)
+	}
+	decrypted, err := lib.DecryptMsgRsa([]byte(decodedSecret), privkey)
+	if err != nil {
+		t.Error(err)
+	}
+	decryptedEncode := base64.StdEncoding.EncodeToString(decrypted)
+	sig, err := lib.SignMsgRsa([]byte(decryptedEncode), privkey)
+	encodedSig := base64.StdEncoding.EncodeToString(sig)
+
+	vals := ValidFirst
+	vals["secret"] = decryptedEncode
+	vals["message"] = decryptedEncode
+	vals["signature"] = encodedSig
+
+	resp, err = postReq(vals)
+	if err != nil {
+		t.Error(err)
+	}
+	m, err = getRespText(resp)
+	if err != nil {
+		t.Error(err)
+	}
+	if m.Secret == "Welcome to the DAM network!" {
+		t.Log("Server replied:", m.Secret)
+	} else {
+		t.Error(m.Secret)
+	}
+}
+
 func TestMain(m *testing.M) {
 	//cmd := exec.Command("./dam-dir")
 	//cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}

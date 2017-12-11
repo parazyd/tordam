@@ -169,12 +169,12 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 			info["firstseen"] = n.Firstseen
 			info["valid"] = 0 // This should be 1 after the node is not considered malicious
 		}
-		log.Println("Writing to Redis")
+		log.Printf("%s: Writing to Redis\n", n.Address)
 		redRet, err := RedisCli.HMSet(n.Address, info).Result()
 		lib.CheckError(err)
 
 		if redRet == "OK" {
-			log.Println("Returning encrypted secret to caller.")
+			log.Println("Returning encrypted secret to", n.Address)
 			if err := postback(rw, ret, 200); err != nil {
 				lib.CheckError(err)
 			}
@@ -204,10 +204,8 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 			val, err := lib.VerifyMsgRsa(msg, sig, pub)
 			lib.CheckError(err)
 			if val {
-				log.Println("Signature valid!")
 				correct = true
 			} else {
-				log.Println("Signature invalid!")
 				correct = false
 			}
 		}
