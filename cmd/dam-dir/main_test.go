@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -75,6 +76,63 @@ func TestValidFirstHandshake(t *testing.T) {
 	}
 
 	t.Log("Server replied:", m.Secret)
+}
+
+func TestValidSecondHandshake(t *testing.T) {
+	// Valid 2/2 handshake request
+	req := map[string]string{
+		"nodetype":  "node",
+		"address":   "22mobp7vrb7a4gt2.onion",
+		"message":   "I am a DAM node!",
+		"signature": "BuB/Dv8E44CLzUX88K2Ab0lUNS9A0GSkHPtrFNNWZMihPMWN0ORhwMZBRnMJ8woPO3wSONBvEvaCXA2hvsVrUJTa+hnevQNyQXCRhdTVVuVXEpjyFzkMamxb6InrGqbsGGkEUqGMSr9aaQ85N02MMrM6T6JuyqSSssFg2xuO+P4=",
+		"secret":    "",
+	}
+	resp, err := postReq(req)
+	if err != nil {
+		t.Error(err)
+	}
+	m, err := getRespText(resp)
+	if err != nil {
+		t.Error(err)
+	}
+
+	decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
+	if err != nil {
+		t.Error(err)
+	}
+
+	privkey, err := lib.LoadRsaKeyFromFile("dam-private.key")
+	if err != nil {
+		t.Error(err)
+	}
+
+	decrypted, err := lib.DecryptMsgRsa([]byte(decodedSecret), privkey)
+	if err != nil {
+		t.Error(err)
+	}
+
+	decryptedEncode := base64.StdEncoding.EncodeToString(decrypted)
+	sig, err := lib.SignMsgRsa([]byte(decryptedEncode), privkey)
+	if err != nil {
+		t.Error(err)
+	}
+	encodedSig := base64.StdEncoding.EncodeToString(sig)
+
+	req["message"] = decryptedEncode
+	req["secret"] = decryptedEncode
+	req["signature"] = encodedSig
+	resp, err = postReq(req)
+	if err != nil {
+		t.Error(err)
+	}
+	m, err = getRespText(resp)
+	if err != nil {
+		t.Error(err)
+	} else if m.Secret == "Welcome to the DAM network!" {
+		t.Log("Server replied:", m.Secret)
+	} else {
+		t.Error("Server replied:", m.Secret)
+	}
 }
 
 func TestInvalidFirstHandshake(t *testing.T) {
@@ -163,6 +221,108 @@ func TestInvalidFirstHandshake(t *testing.T) {
 	} else {
 		t.Log("Server replied:", m.Secret)
 	}
+}
+
+func TestInvalidSecondHandshake(t *testing.T) {
+	// Valid 2/2 handshake request
+	req := map[string]string{
+		"nodetype":  "node",
+		"address":   "22mobp7vrb7a4gt2.onion",
+		"message":   "I am a DAM node!",
+		"signature": "BuB/Dv8E44CLzUX88K2Ab0lUNS9A0GSkHPtrFNNWZMihPMWN0ORhwMZBRnMJ8woPO3wSONBvEvaCXA2hvsVrUJTa+hnevQNyQXCRhdTVVuVXEpjyFzkMamxb6InrGqbsGGkEUqGMSr9aaQ85N02MMrM6T6JuyqSSssFg2xuO+P4=",
+		"secret":    "",
+	}
+	resp, err := postReq(req)
+	if err != nil {
+		t.Error(err)
+	}
+	m, err := getRespText(resp)
+	if err != nil {
+		t.Error(err)
+	}
+
+	decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
+	if err != nil {
+		t.Error(err)
+	}
+
+	privkey, err := lib.LoadRsaKeyFromFile("dam-private.key")
+	if err != nil {
+		t.Error(err)
+	}
+
+	decrypted, err := lib.DecryptMsgRsa([]byte(decodedSecret), privkey)
+	if err != nil {
+		t.Error(err)
+	}
+
+	decryptedEncode := base64.StdEncoding.EncodeToString(decrypted)
+	sig, err := lib.SignMsgRsa([]byte(decryptedEncode), privkey)
+	if err != nil {
+		t.Error(err)
+	}
+	encodedSig := base64.StdEncoding.EncodeToString(sig)
+
+	// The initial valid request.
+	oldreq := req
+
+	// Message and secret are different
+	req["message"] = decryptedEncode
+	req["secret"] = strings.ToLower(decryptedEncode)
+	req["signature"] = encodedSig
+	resp, err = postReq(req)
+	if err != nil {
+		t.Error(err)
+	}
+	m, err = getRespText(resp)
+	if err != nil {
+		t.Error(err)
+	} else if m.Secret == "Verification failed. Bye." {
+		t.Log("Server replied:", m.Secret)
+	} else {
+		t.Error("Server replied:", m.Secret)
+	}
+
+	// Signature is an invalid format
+	req["message"] = oldreq["message"]
+	req["secret"] = oldreq["secret"]
+	req["signature"] = "Thisisnotbase64"
+	resp, err = postReq(req)
+	if err != nil {
+		t.Error(err)
+	}
+	m, err = getRespText(resp)
+	if err != nil {
+		t.Error(err)
+	} else if strings.HasPrefix(m.Secret, "illegal base64 data at input byte") {
+		t.Log("Server replied:", m.Secret)
+	} else {
+		t.Error("Server replied:", m.Secret)
+	}
+
+	/*
+		// Secret is not the one we should be sending.
+		req["message"] = "a2V1Mzg3NTY0N0BAMTM0NTZ5Z2huZmJndXNpPz8/Ly8vcztwZlsndF1bb2U4NTg3Xnloc25tZ2V5ZGtsZTExCg=="
+		req["secret"] = "a2V1Mzg3NTY0N0BAMTM0NTZ5Z2huZmJndXNpPz8/Ly8vcztwZlsndF1bb2U4NTg3Xnloc25tZ2V5ZGtsZTExCg=="
+		sig, err = lib.SignMsgRsa([]byte(req["secret"]), privkey)
+		if err != nil {
+			t.Error(err)
+		}
+		encodedSig = base64.StdEncoding.EncodeToString(sig)
+		req["signature"] = encodedSig
+		resp, err = postReq(req)
+		if err != nil {
+			t.Error(err)
+		}
+		m, err = getRespText(resp)
+		if err != nil {
+			t.Error(err)
+		} else if strings.HasPrefix(m.Secret, "illegal base64 data at input byte") {
+			t.Log("Server replied:", m.Secret)
+		} else {
+			t.Error("Server replied:", m.Secret)
+		}
+	*/
 }
 
 func TestMain(m *testing.M) {
