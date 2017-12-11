@@ -63,9 +63,9 @@ func ValidateReq(req map[string]string, pubkey string) ([]byte, bool) {
 	pub, err := ParsePubkeyRsa([]byte(pubkey))
 	CheckError(err)
 
-	val, err := VerifyMsgRsa(msg, sig, pub)
-	CheckError(err)
+	val, _ := VerifyMsgRsa(msg, sig, pub)
 	if val != true {
+		log.Println("crypto/rsa: verification failure")
 		return nil, false
 	}
 

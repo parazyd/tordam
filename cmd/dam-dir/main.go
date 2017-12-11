@@ -61,12 +61,17 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	decoder := json.NewDecoder(request.Body)
-
 	var n nodeStruct
+	decoder := json.NewDecoder(request.Body)
 	err := decoder.Decode(&n)
 	if err != nil {
 		log.Println("Failed decoding request:", err)
+		return
+	}
+
+	// Drop out ASAP.
+	if len(n.Nodetype) == 0 || len(n.Address) == 0 ||
+		len(n.Message) == 0 || len(n.Signature) == 0 {
 		return
 	}
 
