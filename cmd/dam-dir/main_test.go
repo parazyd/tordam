@@ -61,26 +61,19 @@ func firstAnnValid() (*http.Response, error) {
 }
 
 func TestValidFirstHandshake(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	resp, err := firstAnnValid()
 	if err != nil {
 		t.Fatal(err)
-	}
-	if resp.StatusCode == 500 {
-		// Couldn't get a descriptor.
-		m, err := getRespText(resp)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Skipf("Server replied: %s\n", m.Secret)
-	} else if resp.StatusCode != 200 {
-		t.Log(resp.StatusCode)
-		t.Fatal("Server did not respond with HTTP 200")
 	}
 	m, err := getRespText(resp)
 	if err != nil {
 		t.Fatal(err)
 	}
+	if m.Secret == "Could not get a descriptor. Try later." {
+		t.Skipf("Server replied: %s\n", m.Secret)
+	}
+
 	decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
 	if err != nil {
 		t.Fatal(err)
@@ -88,29 +81,29 @@ func TestValidFirstHandshake(t *testing.T) {
 	if len(decodedSecret) != 128 {
 		t.Fatal("decodedSecret is not of correct length.")
 	}
+	if resp.StatusCode != 200 {
+		t.Log(resp.StatusCode)
+		t.Fatal("Server did not respond with HTTP 200")
+	}
 	t.Log("Server replied:", m.Secret)
 }
 
 func TestValidSecondHandshake(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	resp, err := firstAnnValid()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode == 500 {
-		// Couldn't get a descriptor.
-		m, err := getRespText(resp)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Skipf("Server replied: %s\n", m.Secret)
-	} else if resp.StatusCode != 200 {
-		t.Log(resp.StatusCode)
-		t.Fatal("Server did not respond with HTTP 200")
-	}
 	m, err := getRespText(resp)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if m.Secret == "Could not get a descriptor. Try later." {
+		t.Skipf("Server replied: %s\n", m.Secret)
+	}
+	if resp.StatusCode != 200 {
+		t.Log(resp.StatusCode)
+		t.Fatal("Server did not respond with HTTP 200")
 	}
 	decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
 	if err != nil {
@@ -155,8 +148,13 @@ func TestValidSecondHandshake(t *testing.T) {
 
 func TestInvalidNodetypeFirst(t *testing.T) {
 	//t.SkipNow()
-	vals := ValidFirst
-	vals["nodetype"] = "foobar"
+	var vals = map[string]string{
+		"nodetype":  "foobar", // Invalid.
+		"address":   "22mobp7vrb7a4gt2.onion",
+		"message":   "I am a DAM node!",
+		"signature": "BuB/Dv8E44CLzUX88K2Ab0lUNS9A0GSkHPtrFNNWZMihPMWN0ORhwMZBRnMJ8woPO3wSONBvEvaCXA2hvsVrUJTa+hnevQNyQXCRhdTVVuVXEpjyFzkMamxb6InrGqbsGGkEUqGMSr9aaQ85N02MMrM6T6JuyqSSssFg2xuO+P4=",
+		"secret":    "",
+	}
 	resp, err := postReq(vals)
 	if err != nil {
 		t.Fatal(err)
@@ -176,8 +174,13 @@ func TestInvalidNodetypeFirst(t *testing.T) {
 
 func TestInvalidAddressFirst(t *testing.T) {
 	//t.SkipNow()
-	vals := ValidFirst
-	vals["address"] = "foobar.onion"
+	var vals = map[string]string{
+		"nodetype":  "node",
+		"address":   "foobar.onion", // Invalid.
+		"message":   "I am a DAM node!",
+		"signature": "BuB/Dv8E44CLzUX88K2Ab0lUNS9A0GSkHPtrFNNWZMihPMWN0ORhwMZBRnMJ8woPO3wSONBvEvaCXA2hvsVrUJTa+hnevQNyQXCRhdTVVuVXEpjyFzkMamxb6InrGqbsGGkEUqGMSr9aaQ85N02MMrM6T6JuyqSSssFg2xuO+P4=",
+		"secret":    "",
+	}
 	resp, err := postReq(vals)
 	if err != nil {
 		t.Fatal(err)
@@ -198,17 +201,26 @@ func TestInvalidAddressFirst(t *testing.T) {
 func TestInvalidMessageFirst(t *testing.T) {
 	//t.SkipNow()
 	// Valid message and signature, but the signature did not sign this message.
-	vals := ValidFirst
-	vals["message"] = "foobar"
+	var vals = map[string]string{
+		"nodetype":  "node",
+		"address":   "22mobp7vrb7a4gt2.onion",
+		"message":   "I am a MAD node!", // Not matching the below signature.
+		"signature": "BuB/Dv8E44CLzUX88K2Ab0lUNS9A0GSkHPtrFNNWZMihPMWN0ORhwMZBRnMJ8woPO3wSONBvEvaCXA2hvsVrUJTa+hnevQNyQXCRhdTVVuVXEpjyFzkMamxb6InrGqbsGGkEUqGMSr9aaQ85N02MMrM6T6JuyqSSssFg2xuO+P4=",
+		"secret":    "",
+	}
 	resp, err := postReq(vals)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	m, err := getRespText(resp)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.Secret != "Request is not valid." {
+	if m.Secret == "Could not get a descriptor. Try later." {
+		t.Skipf("Server replied: %s\n", m.Secret)
+	}
+	if m.Secret != "Signature verification failure." {
 		t.Fatal("Server replied:", m.Secret)
 	}
 	if resp.StatusCode != 400 {
@@ -218,10 +230,15 @@ func TestInvalidMessageFirst(t *testing.T) {
 }
 
 func TestInvalidSignatureFirst(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	// Invalid signature format.
-	vals := ValidFirst
-	vals["signature"] = "ThisIsNotBase64=="
+	var vals = map[string]string{
+		"nodetype":  "node",
+		"address":   "22mobp7vrb7a4gt2.onion",
+		"message":   "I am a DAM node!",
+		"signature": "ThisIsnotbasE64==", // Invalid.
+		"secret":    "",
+	}
 	resp, err := postReq(vals)
 	if err != nil {
 		t.Fatal(err)
@@ -230,7 +247,7 @@ func TestInvalidSignatureFirst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.HasPrefix(m.Secret, "illegal base64 data at input byte ") {
+	if !(strings.HasPrefix(m.Secret, "illegal base64 data at input byte ")) {
 		t.Fatal("Server replied:", m.Secret)
 	}
 	if resp.StatusCode != 400 {
@@ -240,7 +257,7 @@ func TestInvalidSignatureFirst(t *testing.T) {
 }
 
 func TestInvalidSecond(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	// Try to jump in the second handshake without doing the first.
 	// The values below are valid.
 	vals := ValidFirst
@@ -251,23 +268,15 @@ func TestInvalidSecond(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode == 500 {
-		// Couldn't get a descriptor.
-		m, err := getRespText(resp)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Skipf("Server replied: %s\n", m.Secret)
-	} else if resp.StatusCode != 400 {
-		//	t.Fatal("Server did not respond with HTTP 400")
-	}
-
 	m, err := getRespText(resp)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.Secret != "Verification Failed. Bye." {
+	if m.Secret != "We have not seen you before. Please authenticate properly." {
 		t.Fatal("Server replied:", m.Secret)
+	}
+	if resp.StatusCode != 400 {
+		t.Fatal("Server did not respond with HTTP 400")
 	}
 	t.Log("Server replied:", m.Secret)
 }

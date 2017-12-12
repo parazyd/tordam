@@ -190,6 +190,7 @@ func ValidateSecond(req map[string]string) (bool, string) {
 			CheckError(errors.New("Invalid data fetched from redis when requesting pubkey"))
 		}
 	} else {
+		log.Printf("%s tried to jump in 2/2 handshake before doing the first.\n", req["address"])
 		return false, "We have not seen you before. Please authenticate properly."
 	}
 
