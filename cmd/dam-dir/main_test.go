@@ -61,7 +61,7 @@ func firstAnnValid() (*http.Response, error) {
 }
 
 func TestValidFirstHandshake(t *testing.T) {
-	//t.SkipNow()
+	t.SkipNow()
 	resp, err := firstAnnValid()
 	if err != nil {
 		t.Fatal(err)
@@ -92,7 +92,7 @@ func TestValidFirstHandshake(t *testing.T) {
 }
 
 func TestValidSecondHandshake(t *testing.T) {
-	//t.SkipNow()
+	t.SkipNow()
 	resp, err := firstAnnValid()
 	if err != nil {
 		t.Fatal(err)
@@ -154,51 +154,49 @@ func TestValidSecondHandshake(t *testing.T) {
 }
 
 func TestInvalidNodetypeFirst(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	vals := ValidFirst
 	vals["nodetype"] = "foobar"
 	resp, err := postReq(vals)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode != 400 {
-		t.Fatal("Server did not respond with HTTP 400")
-	}
 	m, err := getRespText(resp)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.Secret == "Invalid nodetype." {
-		t.Log("Server replied:", m.Secret)
-	} else {
+	if m.Secret != "Invalid nodetype." {
 		t.Fatal("Server replied:", m.Secret)
 	}
+	if resp.StatusCode != 400 {
+		t.Fatal("Server did not respond with HTTP 400")
+	}
+	t.Log("Server replied:", m.Secret)
 }
 
 func TestInvalidAddressFirst(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	vals := ValidFirst
 	vals["address"] = "foobar.onion"
 	resp, err := postReq(vals)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode != 400 {
-		t.Fatal("Server did not respond with HTTP 400")
-	}
 	m, err := getRespText(resp)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.Secret == "Request is not valid." {
-		t.Log("Server replied:", m.Secret)
-	} else {
+	if m.Secret != "Invalid onion address." {
 		t.Fatal("Server replied:", m.Secret)
 	}
+	if resp.StatusCode != 400 {
+		t.Fatal("Server did not respond with HTTP 400")
+	}
+	t.Log("Server replied:", m.Secret)
 }
 
 func TestInvalidMessageFirst(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	// Valid message and signature, but the signature did not sign this message.
 	vals := ValidFirst
 	vals["message"] = "foobar"
@@ -206,18 +204,17 @@ func TestInvalidMessageFirst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode != 400 {
-		t.Fatal("Server did not respond with HTTP 400")
-	}
 	m, err := getRespText(resp)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.Secret == "Request is not valid." {
-		t.Log("Server replied:", m.Secret)
-	} else {
+	if m.Secret != "Request is not valid." {
 		t.Fatal("Server replied:", m.Secret)
 	}
+	if resp.StatusCode != 400 {
+		t.Fatal("Server did not respond with HTTP 400")
+	}
+	t.Log("Server replied:", m.Secret)
 }
 
 func TestInvalidSignatureFirst(t *testing.T) {
@@ -229,18 +226,17 @@ func TestInvalidSignatureFirst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode != 400 {
-		t.Fatal("Server did not respond with HTTP 400")
-	}
 	m, err := getRespText(resp)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if strings.HasPrefix(m.Secret, "illegal base64 data at input byte ") {
-		t.Log("Server replied:", m.Secret)
-	} else {
 		t.Fatal("Server replied:", m.Secret)
 	}
+	if resp.StatusCode != 400 {
+		t.Fatal("Server did not respond with HTTP 400")
+	}
+	t.Log("Server replied:", m.Secret)
 }
 
 func TestInvalidSecond(t *testing.T) {

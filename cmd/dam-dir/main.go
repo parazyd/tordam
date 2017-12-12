@@ -53,12 +53,17 @@ func postback(rw http.ResponseWriter, data map[string]string, retCode int) error
 }
 
 func handlePost(rw http.ResponseWriter, request *http.Request) {
+	var ret map[string]string
+	var n nodeStruct
+
 	if request.Method != "POST" || request.Header["Content-Type"][0] != "application/json" {
+		ret = map[string]string{"secret": "Invalid request format."}
+		if err := postback(rw, ret, 400); err != nil {
+			lib.CheckError(err)
+		}
 		return
 	}
 
-	var ret map[string]string
-	var n nodeStruct
 	decoder := json.NewDecoder(request.Body)
 	err := decoder.Decode(&n)
 	if err != nil {
@@ -69,9 +74,18 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	// Bail out as soon as possible.
 	if len(n.Nodetype) == 0 || len(n.Address) == 0 ||
 		len(n.Message) == 0 || len(n.Signature) == 0 {
+		ret = map[string]string{"secret": "Invalid request format."}
+		if err := postback(rw, ret, 400); err != nil {
+			lib.CheckError(err)
+		}
 		return
 	}
 	if !(lib.ValidateOnionAddress(n.Address)) {
+		log.Println("Invalid onion address. Got:", n.Address)
+		ret = map[string]string{"secret": "Invalid onion address."}
+		if err := postback(rw, ret, 400); err != nil {
+			lib.CheckError(err)
+		}
 		return
 	}
 
