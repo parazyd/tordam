@@ -18,6 +18,8 @@ go get -u github.com/parazyd/tor-dam/...
 #### Go
 
 ```
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/sha3
 golang.org/x/net/proxy
 github.com/go-redis/redis
 ```
