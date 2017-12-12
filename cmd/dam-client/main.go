@@ -45,7 +45,7 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 		return false, err
 	}
 
-	if resp.StatusCode == 500 {
+	if resp.StatusCode == 400 {
 		log.Printf("%s: Fail. Reply: %s\n", dir, m.Secret)
 		return false, nil
 	}
