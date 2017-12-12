@@ -8,8 +8,8 @@ var Cwd = os.Getenv("HOME") + "/.dam"
 // RsaBits holds the size of our RSA private key. Tor standard is 1024.
 const RsaBits = 1024
 
-// Privpath holds the name of where our private key is.
-const Privpath = "dam-private.key"
+// PrivKeyPath holds the name of where our private key is.
+const PrivKeyPath = "dam-private.key"
 
 // PostMsg holds the message we are signing with our private key.
 const PostMsg = "I am a DAM node!"

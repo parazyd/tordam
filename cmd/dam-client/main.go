@@ -107,16 +107,16 @@ func main() {
 	err := os.Chdir(lib.Cwd)
 	lib.CheckError(err)
 
-	if _, err := os.Stat(lib.Privpath); os.IsNotExist(err) {
+	if _, err := os.Stat(lib.PrivKeyPath); os.IsNotExist(err) {
 		key, err := lib.GenRsa(lib.RsaBits)
 		lib.CheckError(err)
-		_, err = lib.SavePrivRsa(lib.Privpath, key)
+		_, err = lib.SavePrivRsa(lib.PrivKeyPath, key)
 		lib.CheckError(err)
 	}
 
 	// Start up the hidden service
 	log.Println("Starting up the hidden service...")
-	cmd := exec.Command("damhs.py", lib.Privpath)
+	cmd := exec.Command("damhs.py", lib.PrivKeyPath)
 	stdout, err := cmd.StdoutPipe()
 	lib.CheckError(err)
 
@@ -146,7 +146,7 @@ func main() {
 		}
 	}
 
-	key, err := lib.LoadRsaKeyFromFile(lib.Privpath)
+	key, err := lib.LoadRsaKeyFromFile(lib.PrivKeyPath)
 	lib.CheckError(err)
 
 	sig, err := lib.SignMsgRsa([]byte(lib.PostMsg), key)
