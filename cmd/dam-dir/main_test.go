@@ -61,7 +61,7 @@ func firstAnnValid() (*http.Response, error) {
 }
 
 func TestValidFirstHandshake(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	resp, err := firstAnnValid()
 	if err != nil {
 		t.Fatal(err)
@@ -92,7 +92,7 @@ func TestValidFirstHandshake(t *testing.T) {
 }
 
 func TestValidSecondHandshake(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	resp, err := firstAnnValid()
 	if err != nil {
 		t.Fatal(err)
@@ -241,6 +241,39 @@ func TestInvalidSignatureFirst(t *testing.T) {
 	} else {
 		t.Fatal("Server replied:", m.Secret)
 	}
+}
+
+func TestInvalidSecond(t *testing.T) {
+	t.SkipNow()
+	// Try to jump in the second handshake without doing the first.
+	// The values below are valid.
+	vals := ValidFirst
+	vals["message"] = "ZShhYHYsRGNLOTZ6YUwwP3ZXPnxhQiR9UFVWfmk5TG56TEtLb04vMms+OTIrLlQ7aS4rflR3V041RG5Je0tnYw=="
+	vals["secret"] = "ZShhYHYsRGNLOTZ6YUwwP3ZXPnxhQiR9UFVWfmk5TG56TEtLb04vMms+OTIrLlQ7aS4rflR3V041RG5Je0tnYw=="
+	vals["signature"] = "L1N+VEi3T3aZaYksAy1+0UMoYn7B3Gapfk0dJzOUxUtUYVhj84TgfYeDnADNYrt5UK9hN/lCTIhsM6zPO7mSjQI43l3dKvMIikqQDwNey/XaokyPI4/oKrMoGQnu8E8UmHmI1pFvwdO5EQQaKbi90qWNj93KB/NlTwqD9Ir4blY="
+	resp, err := postReq(vals)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode == 500 {
+		// Couldn't get a descriptor.
+		m, err := getRespText(resp)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Skipf("Server replied: %s\n", m.Secret)
+	} else if resp.StatusCode != 400 {
+		//	t.Fatal("Server did not respond with HTTP 400")
+	}
+
+	m, err := getRespText(resp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.Secret != "Verification Failed. Bye." {
+		t.Fatal("Server replied:", m.Secret)
+	}
+	t.Log("Server replied:", m.Secret)
 }
 
 func TestMain(m *testing.M) {
