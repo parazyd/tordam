@@ -259,11 +259,15 @@ func TestInvalidSignatureFirst(t *testing.T) {
 func TestInvalidSecond(t *testing.T) {
 	//t.SkipNow()
 	// Try to jump in the second handshake without doing the first.
-	// The values below are valid.
-	vals := ValidFirst
-	vals["message"] = "ZShhYHYsRGNLOTZ6YUwwP3ZXPnxhQiR9UFVWfmk5TG56TEtLb04vMms+OTIrLlQ7aS4rflR3V041RG5Je0tnYw=="
-	vals["secret"] = "ZShhYHYsRGNLOTZ6YUwwP3ZXPnxhQiR9UFVWfmk5TG56TEtLb04vMms+OTIrLlQ7aS4rflR3V041RG5Je0tnYw=="
-	vals["signature"] = "L1N+VEi3T3aZaYksAy1+0UMoYn7B3Gapfk0dJzOUxUtUYVhj84TgfYeDnADNYrt5UK9hN/lCTIhsM6zPO7mSjQI43l3dKvMIikqQDwNey/XaokyPI4/oKrMoGQnu8E8UmHmI1pFvwdO5EQQaKbi90qWNj93KB/NlTwqD9Ir4blY="
+	// The values below are a valid second handshake, but here we test it
+	// without doing the first one..
+	var vals = map[string]string{
+		"nodetype":  "node",
+		"address":   "22mobp7vrb7a4gt2.onion",
+		"message":   "ZShhYHYsRGNLOTZ6YUwwP3ZXPnxhQiR9UFVWfmk5TG56TEtLb04vMms+OTIrLlQ7aS4rflR3V041RG5Je0tnYw==",
+		"signature": "L1N+VEi3T3aZaYksAy1+0UMoYn7B3Gapfk0dJzOUxUtUYVhj84TgfYeDnADNYrt5UK9hN/lCTIhsM6zPO7mSjQI43l3dKvMIikqQDwNey/XaokyPI4/oKrMoGQnu8E8UmHmI1pFvwdO5EQQaKbi90qWNj93KB/NlTwqD9Ir4blY=",
+		"secret":    "ZShhYHYsRGNLOTZ6YUwwP3ZXPnxhQiR9UFVWfmk5TG56TEtLb04vMms+OTIrLlQ7aS4rflR3V041RG5Je0tnYw==",
+	}
 	resp, err := postReq(vals)
 	if err != nil {
 		t.Fatal(err)
