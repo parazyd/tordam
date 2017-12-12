@@ -4,6 +4,7 @@ Tor Distributed Announce Mechanism (Tor DAM)
 Protocol and tooling for mapping machines in the Tor network running
 this software.
 
+[![GoDoc](https://godoc.org/github.com/parazyd/tor-dam?status.svg)](https://godoc.org/github.com/parazyd/tor-dam)
 
 Installation
 ------------
