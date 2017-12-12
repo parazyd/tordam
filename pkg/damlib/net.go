@@ -12,9 +12,6 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-// ProxyAddr is the address of our Tor SOCKS port.
-const ProxyAddr = "127.0.0.1:9050"
-
 // HTTPPost sends an HTTP POST request to the given host.
 // Takes the host to request and the data to post as arguments.
 // If the host ends with ".onion", it will enable the request to be performed

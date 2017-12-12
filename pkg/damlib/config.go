@@ -16,3 +16,6 @@ const PostMsg = "I am a DAM node!"
 
 // WelcomeMsg holds the message we return when welcoming a node.
 const WelcomeMsg = "Welcome to the DAM network!"
+
+// ProxyAddr is the address of our Tor SOCKS port.
+const ProxyAddr = "127.0.0.1:9050"
