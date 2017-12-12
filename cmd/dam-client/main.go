@@ -173,7 +173,9 @@ func main() {
 		wg.Add(1)
 		go func(x string) {
 			valid, err := announce(x, nodevals, key)
-			lib.CheckError(err)
+			if err != nil {
+				log.Printf("%s: %s\n", x, err.Error())
+			}
 			if valid {
 				ann++
 			}
