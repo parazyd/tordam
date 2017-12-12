@@ -150,6 +150,7 @@ func handleElse(rw http.ResponseWriter, request *http.Request) {
 func main() {
 	var wg sync.WaitGroup
 
+	// Chdir to our working directory.
 	if _, err := os.Stat(lib.Cwd); os.IsNotExist(err) {
 		err := os.Mkdir(lib.Cwd, 0700)
 		lib.CheckError(err)
@@ -162,12 +163,18 @@ func main() {
 		startRedis()
 	}
 
-	http.HandleFunc("/announce", handlePost)
-	http.HandleFunc("/", handleElse)
-
+	mux := http.NewServeMux()
+	mux.HandleFunc("/announce", handlePost)
+	mux.HandleFunc("/", handleElse)
+	srv := &http.Server{
+		Addr:         ListenAddress,
+		Handler:      mux,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
 	wg.Add(1)
-	go http.ListenAndServe(ListenAddress, nil)
+	go srv.ListenAndServe()
 	log.Println("Listening on", ListenAddress)
-
 	wg.Wait()
+	os.Exit(1)
 }
