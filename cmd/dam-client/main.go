@@ -16,18 +16,6 @@ import (
 	lib "github.com/parazyd/tor-dam/pkg/damlib"
 )
 
-// Cwd holds the path to the directory where we will Chdir on startup.
-var Cwd = os.Getenv("HOME") + "/.dam"
-
-// RsaBits holds the size of our RSA private key. Tor standard is 1024.
-const RsaBits = 1024
-
-// Privpath holds the name of where our private key is.
-const Privpath = "dam-private.key"
-
-// Postmsg holds the message we are signing with our private key.
-const Postmsg = "I am a DAM node!"
-
 type msgStruct struct {
 	Secret string
 }
@@ -103,33 +91,32 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 			log.Printf("%s: Success. 2/2 handshake valid.\n", dir)
 			log.Printf("%s: Reply: %s\n", dir, m.Secret)
 			return true, nil
-		} else {
-			log.Printf("%s: Fail. Reply: %s\n", dir, m.Secret)
-			return false, nil
 		}
+		log.Printf("%s: Fail. Reply: %s\n", dir, m.Secret)
+		return false, nil
 	}
 
 	return false, nil
 }
 
 func main() {
-	if _, err := os.Stat(Cwd); os.IsNotExist(err) {
-		err := os.Mkdir(Cwd, 0700)
+	if _, err := os.Stat(lib.Cwd); os.IsNotExist(err) {
+		err := os.Mkdir(lib.Cwd, 0700)
 		lib.CheckError(err)
 	}
-	err := os.Chdir(Cwd)
+	err := os.Chdir(lib.Cwd)
 	lib.CheckError(err)
 
-	if _, err := os.Stat(Privpath); os.IsNotExist(err) {
-		key, err := lib.GenRsa(RsaBits)
+	if _, err := os.Stat(lib.Privpath); os.IsNotExist(err) {
+		key, err := lib.GenRsa(lib.RsaBits)
 		lib.CheckError(err)
-		_, err = lib.SavePrivRsa(Privpath, key)
+		_, err = lib.SavePrivRsa(lib.Privpath, key)
 		lib.CheckError(err)
 	}
 
 	// Start up the hidden service
 	log.Println("Starting up the hidden service...")
-	cmd := exec.Command("damhs.py", Privpath)
+	cmd := exec.Command("damhs.py", lib.Privpath)
 	stdout, err := cmd.StdoutPipe()
 	lib.CheckError(err)
 
@@ -159,10 +146,10 @@ func main() {
 		}
 	}
 
-	key, err := lib.LoadRsaKeyFromFile(Privpath)
+	key, err := lib.LoadRsaKeyFromFile(lib.Privpath)
 	lib.CheckError(err)
 
-	sig, err := lib.SignMsgRsa([]byte(Postmsg), key)
+	sig, err := lib.SignMsgRsa([]byte(lib.PostMsg), key)
 	lib.CheckError(err)
 	encodedSig := base64.StdEncoding.EncodeToString(sig)
 
@@ -172,7 +159,7 @@ func main() {
 	nodevals := map[string]string{
 		"nodetype":  "node",
 		"address":   string(onionAddr),
-		"message":   Postmsg,
+		"message":   lib.PostMsg,
 		"signature": encodedSig,
 		"secret":    "",
 	}

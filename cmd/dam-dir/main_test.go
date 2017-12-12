@@ -146,7 +146,7 @@ func TestValidSecondHandshake(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.Secret == "Welcome to the DAM network!" {
+	if m.Secret == lib.WelcomeMsg {
 		t.Log("Server replied:", m.Secret)
 	} else {
 		t.Fatal(m.Secret)
