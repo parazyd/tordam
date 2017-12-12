@@ -19,3 +19,10 @@ const WelcomeMsg = "Welcome to the DAM network!"
 
 // ProxyAddr is the address of our Tor SOCKS port.
 const ProxyAddr = "127.0.0.1:9050"
+
+// TorPortMap is a comma-separated string holding the mapping of ports
+// to be opened by the Tor Hidden Service. Format is "remote:local".
+const TorPortMap = "80:49371"
+
+// DirPort is the port where dam-dir will be listening.
+const DirPort = 49371

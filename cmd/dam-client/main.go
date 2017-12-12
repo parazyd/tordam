@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 	"sync"
 	"time"
 
@@ -28,7 +29,7 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 
 	if dir == "localhost" || dir == "127.0.0.1" {
 		// Modify the string if we are authenticating to ourself.
-		dir += ":49371"
+		dir += ":" + strconv.Itoa(lib.DirPort)
 	}
 
 	log.Println("Announcing keypair to:", dir)
@@ -116,7 +117,7 @@ func main() {
 
 	// Start up the hidden service
 	log.Println("Starting up the hidden service...")
-	cmd := exec.Command("damhs.py", lib.PrivKeyPath)
+	cmd := exec.Command("damhs.py", lib.PrivKeyPath, lib.TorPortMap)
 	stdout, err := cmd.StdoutPipe()
 	lib.CheckError(err)
 
