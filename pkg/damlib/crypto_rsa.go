@@ -65,7 +65,6 @@ func SavePubRsa(filename string, pubkey rsa.PublicKey) error {
 // *rsa.PrivateKey. It returns an error on failure, otherwise: nil
 func SavePrivRsa(filename string, privkey *rsa.PrivateKey) error {
 	log.Printf("Writing private key to %s\n", filename)
-	// FIXME: worry or not about creating the path if it doesn't exist?
 	outfile, err := os.Create(filename)
 	defer outfile.Close()
 	if err != nil {
