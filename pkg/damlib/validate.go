@@ -53,7 +53,7 @@ func sanityCheck(req map[string]string, handshake int) (bool, string) {
 	return true, ""
 }
 
-// ValidateFirst validates the first incoming handshake.
+// ValidateFirstHandshake validates the first incoming handshake.
 // It first calls sanityCheck to validate it's actually working with proper
 // data.
 // Next, it will look if the node is already found in redis. If so, it will
@@ -68,7 +68,7 @@ func sanityCheck(req map[string]string, handshake int) (bool, string) {
 // boolean value.
 // On any failure, the function will return false, and produce an according
 // string which is to be considered as an error message.
-func ValidateFirst(req map[string]string) (bool, string) {
+func ValidateFirstHandshake(req map[string]string) (bool, string) {
 	sane, what := sanityCheck(req, 1)
 	if !(sane) {
 		return false, what
@@ -156,7 +156,7 @@ func ValidateFirst(req map[string]string) (bool, string) {
 	return true, encryptedEncodedSecret
 }
 
-// ValidateSecond validates the second part of the handshake.
+// ValidateSecondHandshake validates the second part of the handshake.
 // First basic sanity checks are performed to ensure we are working with valid
 // data.
 // Next, the according public key will be retrieved from redis. If no key is
@@ -169,7 +169,7 @@ func ValidateFirst(req map[string]string) (bool, string) {
 // function will return true, and a welcome message. Upon failure, the function
 // will return false, and an according string which is to be considered an error
 // message.
-func ValidateSecond(req map[string]string) (bool, string) {
+func ValidateSecondHandshake(req map[string]string) (bool, string) {
 	sane, what := sanityCheck(req, 2)
 	if !(sane) {
 		return false, what

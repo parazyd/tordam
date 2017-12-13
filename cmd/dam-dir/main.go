@@ -99,7 +99,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 
 	// First handshake
 	if len(n.Message) != 88 && len(n.Secret) != 88 {
-		valid, msg := lib.ValidateFirst(req)
+		valid, msg := lib.ValidateFirstHandshake(req)
 		ret = map[string]string{"secret": msg}
 		if valid {
 			log.Printf("%s: 1/2 handshake valid.\n", n.Address)
@@ -121,7 +121,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 
 	// Second handshake
 	if len(req["secret"]) == 88 && len(req["message"]) == 88 {
-		valid, msg := lib.ValidateSecond(req)
+		valid, msg := lib.ValidateSecondHandshake(req)
 		ret = map[string]string{"secret": msg}
 		if valid {
 			log.Printf("%s: 2/2 handshake valid.\n", n.Address)
