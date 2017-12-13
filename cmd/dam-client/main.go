@@ -111,7 +111,7 @@ func main() {
 	if _, err := os.Stat(lib.PrivKeyPath); os.IsNotExist(err) {
 		key, err := lib.GenRsa(lib.RsaBits)
 		lib.CheckError(err)
-		_, err = lib.SavePrivRsa(lib.PrivKeyPath, key)
+		err = lib.SavePrivRsa(lib.PrivKeyPath, key)
 		lib.CheckError(err)
 	}
 

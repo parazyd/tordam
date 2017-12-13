@@ -33,19 +33,17 @@ func GenRsa(bitSize int) (*rsa.PrivateKey, error) {
 
 // SavePubRsa saves a given RSA public key to a given filename.
 // SavePubRsa takes the filename to write as a string, and the key as
-// rsa.PublicKey. It returns a boolean value and an error, depending on whether
-// it has failed or not.
-func SavePubRsa(filename string, pubkey rsa.PublicKey) (bool, error) {
-	log.Printf("Writing pubkey to %s\n", filename)
-	// FIXME: worry or not about creating the path if it doesn't exist?
+// rsa.PublicKey. It returns an error on failure, otherwise: nil
+func SavePubRsa(filename string, pubkey rsa.PublicKey) error {
+	log.Println("Writing RSA pubkey to", filename)
 	outfile, err := os.Create(filename)
 	defer outfile.Close()
 	if err != nil {
-		return false, err
+		return err
 	}
 	asn1Bytes, err := asn1.Marshal(pubkey)
 	if err != nil {
-		return false, err
+		return err
 	}
 	var pemkey = &pem.Block{
 		Type:  "RSA PUBLIC KEY",
@@ -53,26 +51,25 @@ func SavePubRsa(filename string, pubkey rsa.PublicKey) (bool, error) {
 	}
 	err = pem.Encode(outfile, pemkey)
 	if err != nil {
-		return false, err
+		return err
 	}
 	err = outfile.Chmod(0400)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
 // SavePrivRsa saves a given RSA private key to a given filename.
 // SavePrivRsa takes the filename to write as a string, and the key as
-// *rsa.PrivateKey. It returns a boolean value and an error, depending on whether
-// it has failed or not.
-func SavePrivRsa(filename string, privkey *rsa.PrivateKey) (bool, error) {
+// *rsa.PrivateKey. It returns an error on failure, otherwise: nil
+func SavePrivRsa(filename string, privkey *rsa.PrivateKey) error {
 	log.Printf("Writing private key to %s\n", filename)
 	// FIXME: worry or not about creating the path if it doesn't exist?
 	outfile, err := os.Create(filename)
 	defer outfile.Close()
 	if err != nil {
-		return false, err
+		return err
 	}
 	var pemkey = &pem.Block{
 		Type:  "RSA PRIVATE KEY",
@@ -80,13 +77,13 @@ func SavePrivRsa(filename string, privkey *rsa.PrivateKey) (bool, error) {
 	}
 	err = pem.Encode(outfile, pemkey)
 	if err != nil {
-		return false, err
+		return err
 	}
 	err = outfile.Chmod(0400)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
 // LoadRsaKeyFromFile loads a RSA private key from a given filename.
