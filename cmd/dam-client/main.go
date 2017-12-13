@@ -185,12 +185,11 @@ func main() {
 	}
 	wg.Wait()
 
-	if ann > 0 {
-		log.Printf("Successfully authenticated with %d nodes.\n", ann)
-	} else {
+	if ann < 1 {
 		cmd.Process.Kill()
 		log.Fatalln("No successful authentications. Exiting.")
 	}
+	log.Printf("Successfully authenticated with %d nodes.\n", ann)
 
 	err = cmd.Wait() // Hidden service Python daemon
 	lib.CheckError(err)

@@ -31,6 +31,7 @@ func sanityCheck(req map[string]string, handshake int) (bool, string) {
 	if _, err := base64.StdEncoding.DecodeString(req["signature"]); err != nil {
 		return false, err.Error()
 	}
+
 	// TODO: When a node wants to promote itself from something it already was,
 	// what to do?
 	switch req["nodetype"] {
@@ -69,8 +70,7 @@ func sanityCheck(req map[string]string, handshake int) (bool, string) {
 // On any failure, the function will return false, and produce an according
 // string which is to be considered as an error message.
 func ValidateFirstHandshake(req map[string]string) (bool, string) {
-	sane, what := sanityCheck(req, 1)
-	if !(sane) {
+	if sane, what := sanityCheck(req, 1); !(sane) {
 		return false, what
 	}
 
@@ -114,8 +114,7 @@ func ValidateFirstHandshake(req map[string]string) (bool, string) {
 	sig := []byte(decSig)
 	pubkey, err := ParsePubkeyRsa([]byte(pub)) // pubkey is their public key in *rsa.PublicKey type
 	CheckError(err)
-	val, _ := VerifyMsgRsa(msg, sig, pubkey)
-	if val != true {
+	if val, _ := VerifyMsgRsa(msg, sig, pubkey); !(val) {
 		log.Println("crypto/rsa: verification failure")
 		return false, "Signature verification failure."
 	}
@@ -170,8 +169,7 @@ func ValidateFirstHandshake(req map[string]string) (bool, string) {
 // will return false, and an according string which is to be considered an error
 // message.
 func ValidateSecondHandshake(req map[string]string) (bool, string) {
-	sane, what := sanityCheck(req, 2)
-	if !(sane) {
+	if sane, what := sanityCheck(req, 2); !(sane) {
 		return false, what
 	}
 
@@ -198,7 +196,7 @@ func ValidateSecondHandshake(req map[string]string) (bool, string) {
 	CheckError(err)
 
 	if !(localSec == req["secret"] && localSec == req["message"]) {
-		log.Println("Secrets don't match.")
+		log.Printf("%s: Secrets don't match.\n", req["address"])
 		return false, "Secrets don't match."
 	}
 
@@ -208,9 +206,8 @@ func ValidateSecondHandshake(req map[string]string) (bool, string) {
 	sig := []byte(decSig)
 	pubkey, err := ParsePubkeyRsa([]byte(pub)) // pubkey is their public key in *rsa.PublicKey type
 	CheckError(err)
-	val, _ := VerifyMsgRsa(msg, sig, pubkey)
-	if val != true {
-		log.Println("crypto/rsa: verification failure")
+	if val, _ := VerifyMsgRsa(msg, sig, pubkey); !(val) {
+		log.Printf("%s: Signature verification failure\n", req["address"])
 		return false, "Signature verification failure."
 	}
 

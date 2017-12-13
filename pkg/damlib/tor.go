@@ -22,8 +22,7 @@ func FetchHSPubkey(addr string) string {
 	err := cmd.Start()
 	CheckError(err)
 
-	err = cmd.Wait()
-	if err != nil {
+	if err = cmd.Wait(); err != nil {
 		log.Println("Could not fetch descriptor:", err)
 		return ""
 	}

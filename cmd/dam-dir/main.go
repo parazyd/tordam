@@ -65,8 +65,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	}
 
 	decoder := json.NewDecoder(request.Body)
-	err := decoder.Decode(&n)
-	if err != nil {
+	if err := decoder.Decode(&n); err != nil {
 		log.Println("Failed decoding request:", err)
 		return
 	}
@@ -142,8 +141,9 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	}
 }
 
+// handleElse is a noop for anything that isn't /announce. We don't care about
+// other requests (yet).
 func handleElse(rw http.ResponseWriter, request *http.Request) {
-	// noop for anything that isn't /announce.
 	return
 }
 
