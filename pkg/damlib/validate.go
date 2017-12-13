@@ -14,11 +14,11 @@ import (
 // ValidateOnionAddress matches a string against a regular expression matching
 // a Tor hidden service address. Returns true on success and false on failure.
 func ValidateOnionAddress(addr string) bool {
-	re, _ := regexp.Compile("^[a-z2-7]{16}\\.onion$")
-	if len(re.FindString(addr)) != 22 {
-		return false
+	re, _ := regexp.Compile("^[a-z2-7](?:.{55}|.{15})\\.onion")
+	if len(re.FindString(addr)) == 22 || len(re.FindString(addr)) == 62 {
+		return true
 	}
-	return true
+	return false
 }
 
 // sanityCheck performs basic sanity checks against the incoming request.
