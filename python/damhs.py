@@ -46,11 +46,10 @@ def main():
     service = start_hs(ctl=ctl, ktype=ktype, kcont=kcont, portmap=portmap)
 
     stdout.write('Started HS at %s.onion\n' % service.service_id)
+    stdout.write('OK\n')
     stdout.flush()
     while True:
-        stdout.write('OK\n')
-        stdout.flush()
-        sleep(10)
+            sleep(60)
 
 
 if __name__ == '__main__':
