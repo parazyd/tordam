@@ -13,3 +13,14 @@ func CheckError(err error) {
 		log.Fatalln(err)
 	}
 }
+
+// StringInSlice loops over a slice of strings and checks if a given string is
+// already an existing element. Returns true if so, and false if not.
+func StringInSlice(str string, slice []string) bool {
+	for _, i := range slice {
+		if str == i {
+			return true
+		}
+	}
+	return false
+}

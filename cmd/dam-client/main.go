@@ -8,9 +8,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"log"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +21,13 @@ import (
 
 type msgStruct struct {
 	Secret string
+}
+
+// Network entry points. These files hold the lists of directories we can
+// announce to. Format is "DIR:22mobp7vrb7a4gt2.onion", other lines are ignored.
+var dirHosts = []string{
+	"https://pub.parazyd.cf/tmp/dirs.txt",
+	"https://pub.parazyd.cf/tmp/moredirs.txt",
 }
 
 func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool, error) {
@@ -100,6 +109,47 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 	return false, nil
 }
 
+func fetchDirlist(locations []string) ([]string, error) {
+	var dirSlice, dirlist []string
+	log.Println("Grabbing a list of directories.")
+
+	for _, i := range locations {
+		log.Println("Fetching", i)
+		dirs, err := lib.HTTPDownload(i)
+		if err != nil {
+			return nil, err
+		}
+		dirStr := string(dirs)
+		_dirs := strings.Split(dirStr, "\n")
+		for _, j := range _dirs {
+			if strings.HasPrefix(j, "DIR:") {
+				t := strings.Split(j, "DIR:")
+				if !(lib.StringInSlice(t[1], dirSlice)) {
+					dirSlice = append(dirSlice, t[1])
+				}
+			}
+		}
+	}
+	if len(dirSlice) < 1 {
+		log.Fatalln("Couldn't get any directories. Exiting.")
+	} else if len(dirSlice) <= 6 {
+		log.Printf("Found only %d directories.\n", len(dirSlice))
+		dirlist = dirSlice
+	} else {
+		log.Println("Found enough directories. Picking out 6 random ones.")
+		// Pick out 6 random directories from the retrieved list.
+		for k := 0; k <= 5; k++ {
+			rand.Seed(time.Now().Unix())
+			n := rand.Int() % len(dirSlice)
+			dirlist = append(dirlist, dirSlice[n])
+			dirSlice[n] = dirSlice[len(dirSlice)-1]
+			dirSlice = dirSlice[:len(dirSlice)-1]
+		}
+	}
+	dirlist = append(dirlist, "localhost")
+	return dirlist, nil
+}
+
 func main() {
 	if _, err := os.Stat(lib.Cwd); os.IsNotExist(err) {
 		err := os.Mkdir(lib.Cwd, 0700)
@@ -147,50 +197,55 @@ func main() {
 		}
 	}
 
-	key, err := lib.LoadRsaKeyFromFile(lib.PrivKeyPath)
-	lib.CheckError(err)
+	for {
+		key, err := lib.LoadRsaKeyFromFile(lib.PrivKeyPath)
+		lib.CheckError(err)
 
-	sig, err := lib.SignMsgRsa([]byte(lib.PostMsg), key)
-	lib.CheckError(err)
-	encodedSig := base64.StdEncoding.EncodeToString(sig)
+		sig, err := lib.SignMsgRsa([]byte(lib.PostMsg), key)
+		lib.CheckError(err)
+		encodedSig := base64.StdEncoding.EncodeToString(sig)
 
-	onionAddr, err := lib.OnionFromPubkeyRsa(key.PublicKey)
-	lib.CheckError(err)
+		onionAddr, err := lib.OnionFromPubkeyRsa(key.PublicKey)
+		lib.CheckError(err)
 
-	nodevals := map[string]string{
-		"nodetype":  "node",
-		"address":   string(onionAddr),
-		"message":   lib.PostMsg,
-		"signature": encodedSig,
-		"secret":    "",
+		nodevals := map[string]string{
+			"nodetype":  "node",
+			"address":   string(onionAddr),
+			"message":   lib.PostMsg,
+			"signature": encodedSig,
+			"secret":    "",
+		}
+
+		log.Println("Announcing to directories...")
+		var ann = 0 // Track of how many successful authentications
+		var wg sync.WaitGroup
+		dirlist, err := fetchDirlist(dirHosts)
+		lib.CheckError(err)
+		for _, i := range dirlist {
+			wg.Add(1)
+			go func(x string) {
+				valid, err := announce(x, nodevals, key)
+				if err != nil {
+					log.Printf("%s: %s\n", x, err.Error())
+				}
+				if valid {
+					ann++
+				}
+				wg.Done()
+			}(i)
+		}
+		wg.Wait()
+
+		if ann < 1 {
+			cmd.Process.Kill()
+			log.Fatalln("No successful authentications. Exiting.")
+		} else {
+			log.Printf("Successfully authenticated with %d nodes.\n", ann)
+		}
+		log.Println("Waiting 10 minutes before next announce.")
+		time.Sleep(600 * time.Second)
 	}
 
-	var ann = 0 // Track of how many successful authentications
-
-	dirs := []string{"3mb6b3exknytbqdg.onion", "localhost"}
-
-	var wg sync.WaitGroup
-	for _, i := range dirs {
-		wg.Add(1)
-		go func(x string) {
-			valid, err := announce(x, nodevals, key)
-			if err != nil {
-				log.Printf("%s: %s\n", x, err.Error())
-			}
-			if valid {
-				ann++
-			}
-			wg.Done()
-		}(i)
-	}
-	wg.Wait()
-
-	if ann < 1 {
-		cmd.Process.Kill()
-		log.Fatalln("No successful authentications. Exiting.")
-	}
-	log.Printf("Successfully authenticated with %d nodes.\n", ann)
-
-	err = cmd.Wait() // Hidden service Python daemon
-	lib.CheckError(err)
+	//err = cmd.Wait() // Hidden service Python daemon
+	//lib.CheckError(err)
 }

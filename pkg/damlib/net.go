@@ -4,6 +4,7 @@ package damlib
 
 import (
 	"bytes"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -49,4 +50,19 @@ func HTTPPost(host string, data []byte) (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+// HTTPDownload tries to download a given uri and return it as a slice of bytes.
+// On failure it will return an error.
+func HTTPDownload(uri string) ([]byte, error) {
+	res, err := http.Get(uri)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	d, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	return d, nil
 }
