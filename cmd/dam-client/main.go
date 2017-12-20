@@ -4,6 +4,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"compress/gzip"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
@@ -92,14 +94,35 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 			return false, err
 		}
 		decoder = json.NewDecoder(resp.Body)
-		err = decoder.Decode(&m)
-		if err != nil {
+		if err = decoder.Decode(&m); err != nil {
 			return false, err
 		}
 
 		if resp.StatusCode == 200 {
 			log.Printf("%s: Success. 2/2 handshake valid.\n", dir)
-			log.Printf("%s: Reply: %s\n", dir, m.Secret)
+			// TODO: To TOFU or not to TOFU?
+			data, err := base64.StdEncoding.DecodeString(m.Secret)
+			if err != nil {
+				// Not a list of nodes.
+				log.Printf("%s: Reply: %s\n", dir, m.Secret)
+				return true, nil
+			}
+			log.Println("Got node data. Processing...")
+			b := bytes.NewReader(data)
+			r, _ := gzip.NewReader(b)
+			nodes := make(map[string]map[string]interface{})
+			decoder = json.NewDecoder(r)
+			if err = decoder.Decode(&nodes); err != nil {
+				return false, err
+			}
+			for k, v := range nodes {
+				log.Printf("Adding %s to redis\n", k)
+				redRet, err := lib.RedisCli.HMSet(k, v).Result()
+				lib.CheckError(err)
+				if redRet != "OK" {
+					log.Println("Redis returned:", redRet)
+				}
+			}
 			return true, nil
 		}
 		log.Printf("%s: Fail. Reply: %s\n", dir, m.Secret)

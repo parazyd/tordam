@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -122,14 +123,61 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	if len(req["secret"]) == 88 && len(req["message"]) == 88 {
 		valid, msg := lib.ValidateSecondHandshake(req)
 		ret = map[string]string{"secret": msg}
+
 		if valid {
 			log.Printf("%s: 2/2 handshake valid.\n", n.Address)
-			log.Println("Sending back welcome message.")
+			hasConsensus, err := lib.RedisCli.HGet(n.Address, "valid").Result()
+			lib.CheckError(err)
+
+			us := request.Host // Assume our name is what was requested as the URL.
+			if strings.HasPrefix(us, "localhost") {
+				// No need to propagate to ourself.
+				ret = map[string]string{"secret": "Welcome to the DAM network!"}
+				if err := postback(rw, ret, 200); err != nil {
+					lib.CheckError(err)
+				}
+				return
+			}
+
+			nodemap := make(map[string]map[string]string)
+
+			if hasConsensus == "1" {
+				// The node does have consensus, we'll teach it about the valid
+				// nodes we know.
+				log.Printf("%s has consensus. Propagating our nodes to it...\n", n.Address)
+				nodes, err := lib.RedisCli.Keys("*.onion").Result()
+				lib.CheckError(err)
+				for _, i := range nodes {
+					if i == n.Address {
+						continue
+					}
+					nodedata, err := lib.RedisCli.HGetAll(i).Result()
+					lib.CheckError(err)
+					if nodedata["valid"] == "1" {
+						nodemap[i] = nodedata
+					}
+				}
+			} else {
+				log.Printf("%s does not have consensus. Propagating ourself to it...\n", n.Address)
+				// The node doesn't have consensus in the network. We will only
+				// teach it about ourself.
+				nodedata, err := lib.RedisCli.HGetAll(us).Result()
+				lib.CheckError(err)
+				nodemap[us] = nodedata
+			}
+
+			nodestr, err := json.Marshal(nodemap)
+			lib.CheckError(err)
+			comp, err := lib.GzipEncode(nodestr)
+			lib.CheckError(err)
+			ret = map[string]string{"secret": comp}
 			if err := postback(rw, ret, 200); err != nil {
 				lib.CheckError(err)
 			}
 			return
 		}
+
+		// If we have't returned so far, the handshake is invalid.
 		log.Printf("%s: 2/2 handshake invalid.\n", n.Address)
 		// Delete it all from redis.
 		_, err := lib.RedisCli.Del(n.Address).Result()

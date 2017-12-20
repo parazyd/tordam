@@ -3,6 +3,9 @@ package damlib
 // See LICENSE file for copyright and license details.
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"log"
 )
 
@@ -23,4 +26,21 @@ func StringInSlice(str string, slice []string) bool {
 		}
 	}
 	return false
+}
+
+// GzipEncode compresses a given string using gzip, and returns it as a base64
+// encoded string. Returns error upon failure.
+func GzipEncode(data []byte) (string, error) {
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	if _, err := gz.Write(data); err != nil {
+		return "", err
+	}
+	if err := gz.Flush(); err != nil {
+		return "", err
+	}
+	if err := gz.Close(); err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b.Bytes()), nil
 }

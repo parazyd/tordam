@@ -93,9 +93,10 @@ this time will contain the following data:
 ```
 
 The directory will verify the received plain secret against what it has
-encrypted to validate. If the comparison yields no errors, we assume that
-the requester is actually in possession of the private key. We will now
-complete the handshake by welcoming the client into the network:
+encrypted to validate. If the comparison yields no errors, we assume
+that the requester is actually in possession of the private key. If the
+node is not valid in our database, we will complete the handshake by
+welcoming the client into the network:
 
 
 ```
@@ -110,5 +111,7 @@ first seen and last seen, and a field to indicate if the node is valid.
 The latter is not to be handled by Tor-DAM, but rather the upper layer,
 which actually has consensus handling.
 
-Once a node is considered not malicious by a defined number of nodes, the
-directories can then keep propagating addresses of other nodes to it.
+If the node is valid in the directory's database, the directory will
+then propagate back all the valid nodes it knows (including itself) back
+to the client in a gzipped and base64 encoded JSON struct. The client
+will then handle this and update its own database accordingly.
