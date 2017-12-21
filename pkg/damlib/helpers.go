@@ -28,8 +28,8 @@ func StringInSlice(str string, slice []string) bool {
 	return false
 }
 
-// GzipEncode compresses a given string using gzip, and returns it as a base64
-// encoded string. Returns error upon failure.
+// GzipEncode compresses a given slice of bytes using gzip, and returns it as
+// a base64 encoded string. Returns error upon failure.
 func GzipEncode(data []byte) (string, error) {
 	var b bytes.Buffer
 	gz := gzip.NewWriter(&b)
