@@ -132,7 +132,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 			us := request.Host // Assume our name is what was requested as the URL.
 			if strings.HasPrefix(us, "localhost") {
 				// No need to propagate to ourself.
-				ret = map[string]string{"secret": "Welcome to the DAM network!"}
+				ret = map[string]string{"secret": lib.WelcomeMsg}
 				if err := postback(rw, ret, 200); err != nil {
 					lib.CheckError(err)
 				}
