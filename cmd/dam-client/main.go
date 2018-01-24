@@ -28,8 +28,7 @@ type msgStruct struct {
 // Network entry points. These files hold the lists of directories we can
 // announce to. Format is "DIR:22mobp7vrb7a4gt2.onion", other lines are ignored.
 var dirHosts = []string{
-	"https://pub.parazyd.cf/tmp/dirs.txt",
-	"https://pub.parazyd.cf/tmp/moredirs.txt",
+	"https://dam.decodeproject.eu/dirs.txt",
 }
 
 func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool, error) {
