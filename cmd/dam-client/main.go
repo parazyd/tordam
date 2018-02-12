@@ -244,7 +244,12 @@ func main() {
 		var ann = 0 // Track of how many successful authentications
 		var wg sync.WaitGroup
 		dirlist, err := fetchDirlist(dirHosts)
-		lib.CheckError(err)
+		if err != nil {
+			// No route to host, or failed dl. Try later.
+			log.Println("Failed to fetch directory list. Retrying in a minute.")
+			time.Sleep(60 * time.Second)
+			continue
+		}
 		for _, i := range dirlist {
 			wg.Add(1)
 			go func(x string) {
