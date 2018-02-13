@@ -15,7 +15,7 @@ Abstract
 * A node announces itself to directories by sending a JSON-formatted
   HTTP POST request to one or more active nodes/directories.
   * Once the POST request is received, the directory will validate the
-    request and return a secret encrypted with the requester's private
+    request and return a secret encrypted with the requester's public
 	key.
   * The requester will try to decrypt this secret, and return it plain
     back to the directory, along with a cryptographic signature, so the
@@ -61,7 +61,7 @@ signature that was made. Validating this, we assume that the requester
 is in possession of the private key.
 
 Following up, the directory will generate a cryptographically secure
-random string and encrypt it using the before acquired private key. It
+random string and encrypt it using the before acquired public key. It
 will then be encoded using base64 and sent back to the client:
 
 
