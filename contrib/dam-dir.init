@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+# Copyright 1999-2018 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+command="/home/$damuid/go/bin/dam-dir"
+pidfile="/var/run/dam-dir.pid"
+
+description="Tor DAM server"
+
+depend() {
+	after logger
+	before tor dam-client
+}
+
+start() {
+	start-stop-daemon --start --background -u $damuid -g $damgid \
+		--make-pidfile --pidfile $pidfile \
+		--startas /bin/sh -- -c "exec $command >> $damlog 2>&1"
+}
