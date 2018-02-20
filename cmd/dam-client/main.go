@@ -27,6 +27,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
@@ -206,7 +207,11 @@ func main() {
 		lib.CheckError(err)
 		err = lib.SavePrivRsa(lib.PrivKeyPath, key)
 		lib.CheckError(err)
-		// TODO: save or log hostname
+		onionaddr, err := lib.OnionFromPubkeyRsa(key.PublicKey)
+		lib.CheckError(err)
+		err = ioutil.WriteFile("hostname", onionaddr, 0644)
+		lib.CheckError(err)
+		log.Println("Our hostname is:", string(onionaddr))
 	}
 
 	// Start up the hidden service
