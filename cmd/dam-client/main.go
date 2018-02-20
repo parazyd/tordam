@@ -257,8 +257,6 @@ func main() {
 	}
 
 	for {
-		// TODO: Should we load the key every iteration or not?
-		// Reason: Do we care if the key has dissapeared in the file format?
 		key, err := lib.LoadRsaKeyFromFile(lib.PrivKeyPath)
 		lib.CheckError(err)
 
