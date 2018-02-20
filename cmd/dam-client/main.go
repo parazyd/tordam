@@ -154,6 +154,7 @@ func fetchDirlist(locations []string) ([]string, error) {
 	var dirSlice, dirlist []string
 	log.Println("Grabbing a list of directories.")
 
+	// Remote network entry points
 	for _, i := range locations {
 		log.Println("Fetching", i)
 		dirs, err := lib.HTTPDownload(i)
@@ -172,7 +173,16 @@ func fetchDirlist(locations []string) ([]string, error) {
 		}
 	}
 
-	// TODO: fill dirSlice with info from our redis and start making a hydra.
+	// Local nodes known to redis
+	nodes, err := lib.RedisCli.Keys("*.onion").Result()
+	lib.CheckError(err)
+	for _, i := range nodes {
+		valid, err := lib.RedisCli.HGet(i, "valid").Result()
+		lib.CheckError(err)
+		if valid == "1" {
+			dirSlice = append(dirSlice, i)
+		}
+	}
 
 	if len(dirSlice) < 1 {
 		log.Fatalln("Couldn't get any directories. Exiting.")
