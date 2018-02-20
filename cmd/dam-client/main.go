@@ -170,6 +170,9 @@ func fetchDirlist(locations []string) ([]string, error) {
 			}
 		}
 	}
+
+	// TODO: fill dirSlice with info from our redis and start making a hydra.
+
 	if len(dirSlice) < 1 {
 		log.Fatalln("Couldn't get any directories. Exiting.")
 	} else if len(dirSlice) <= 6 {
