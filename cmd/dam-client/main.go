@@ -24,12 +24,13 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
+	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"math/rand"
+	"math/big"
 	"os"
 	"os/exec"
 	"strconv"
@@ -193,10 +194,9 @@ func fetchDirlist(locations []string) ([]string, error) {
 		log.Println("Found enough directories. Picking out 6 random ones.")
 		// Pick out 6 random directories from the retrieved list.
 		for k := 0; k <= 5; k++ {
-			rand.Seed(time.Now().Unix())
-			n := rand.Int() % len(dirSlice)
-			dirlist = append(dirlist, dirSlice[n])
-			dirSlice[n] = dirSlice[len(dirSlice)-1]
+			n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(dirSlice))))
+			dirlist = append(dirlist, dirSlice[n.Int64()])
+			dirSlice[n.Int64()] = dirSlice[len(dirSlice)-1]
 			dirSlice = dirSlice[:len(dirSlice)-1]
 		}
 	}
