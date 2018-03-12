@@ -13,7 +13,16 @@ depend() {
 }
 
 start() {
+	ebegin "Starting $description"
+	_h="$(getent passwd $damuid | cut -d: -f6)"
 	start-stop-daemon --start --background -u $damuid -g $damgid \
 		--make-pidfile --pidfile $pidfile \
-		--startas /bin/sh -- -c "exec $command >> $damlog 2>&1"
+		--startas /bin/sh -- -c "export HOME=$_h && exec $command >> $damlog 2>&1"
+}
+
+stop() {
+	ebegin "Stopping $description"
+	_chld="$(pgrep -P $(cat $pidfile) | tr '\n' ' ')"
+	kill $_chld || true
+	start-stop-daemon --stop --pidfile $pidfile
 }
