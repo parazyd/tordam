@@ -209,9 +209,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 
 // handleElse is a noop for anything that isn't /announce. We don't care about
 // other requests (yet).
-func handleElse(rw http.ResponseWriter, request *http.Request) {
-	return
-}
+func handleElse(rw http.ResponseWriter, request *http.Request) {}
 
 func main() {
 	var wg sync.WaitGroup

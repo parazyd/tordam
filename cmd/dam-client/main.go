@@ -87,7 +87,7 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 			return false, err
 		}
 
-		decrypted, err := lib.DecryptMsgRsa([]byte(decodedSecret), privkey)
+		decrypted, err := lib.DecryptMsgRsa(decodedSecret, privkey)
 		if err != nil {
 			return false, err
 		}

@@ -63,11 +63,7 @@ func getRespText(resp *http.Response) (msgStruct, error) {
 
 	decoder := json.NewDecoder(resp.Body)
 	err := decoder.Decode(&m)
-	if err != nil {
-		return m, err
-	}
-
-	return m, nil
+	return m, err
 }
 
 func firstAnnValid() (*http.Response, error) {
@@ -141,7 +137,7 @@ func TestValidSecondHandshake(t *testing.T) {
 		t.Fatal(err)
 	}
 	decryptedEncode := base64.StdEncoding.EncodeToString(decrypted)
-	sig, err := lib.SignMsgRsa([]byte(decryptedEncode), privkey)
+	sig, _ := lib.SignMsgRsa([]byte(decryptedEncode), privkey)
 	encodedSig := base64.StdEncoding.EncodeToString(sig)
 
 	vals := ValidFirst
@@ -157,11 +153,10 @@ func TestValidSecondHandshake(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.Secret == lib.WelcomeMsg {
-		t.Log("Server replied:", m.Secret)
-	} else {
+	if m.Secret != lib.WelcomeMsg {
 		t.Fatal(m.Secret)
 	}
+	t.Log("Server replied:", m.Secret)
 }
 
 func TestInvalidNodetypeFirst(t *testing.T) {
