@@ -32,7 +32,7 @@ import (
 // ValidateOnionAddress matches a string against a regular expression matching
 // a Tor hidden service address. Returns true on success and false on failure.
 func ValidateOnionAddress(addr string) bool {
-	re, _ := regexp.Compile("^[a-z2-7](?:.{55}|.{15})\\.onion")
+	re, _ := regexp.Compile(`^[a-z2-7](?:.{55}|.{15})\.onion`)
 	if len(re.FindString(addr)) == 22 || len(re.FindString(addr)) == 62 {
 		return true
 	}
@@ -129,7 +129,7 @@ func ValidateFirstHandshake(req map[string]string) (bool, string) {
 	// Validate signature.
 	msg := []byte(req["message"])
 	decSig, _ := base64.StdEncoding.DecodeString(req["signature"])
-	sig := []byte(decSig)
+	sig := decSig
 	pubkey, err := ParsePubkeyRsa([]byte(pub)) // pubkey is their public key in *rsa.PublicKey type
 	CheckError(err)
 	if val, _ := VerifyMsgRsa(msg, sig, pubkey); !(val) {
@@ -221,7 +221,7 @@ func ValidateSecondHandshake(req map[string]string) (bool, string) {
 	// Validate signature.
 	msg := []byte(req["message"])
 	decSig, _ := base64.StdEncoding.DecodeString(req["signature"])
-	sig := []byte(decSig)
+	sig := decSig
 	pubkey, err := ParsePubkeyRsa([]byte(pub)) // pubkey is their public key in *rsa.PublicKey type
 	CheckError(err)
 	if val, _ := VerifyMsgRsa(msg, sig, pubkey); !(val) {

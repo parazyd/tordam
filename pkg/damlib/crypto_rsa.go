@@ -55,10 +55,10 @@ func GenRsa(bitSize int) (*rsa.PrivateKey, error) {
 func SavePubRsa(filename string, pubkey rsa.PublicKey) error {
 	log.Println("Writing RSA pubkey to", filename)
 	outfile, err := os.Create(filename)
-	defer outfile.Close()
 	if err != nil {
 		return err
 	}
+	defer outfile.Close()
 	asn1Bytes, err := asn1.Marshal(pubkey)
 	if err != nil {
 		return err
@@ -70,10 +70,7 @@ func SavePubRsa(filename string, pubkey rsa.PublicKey) error {
 	if err = pem.Encode(outfile, pemkey); err != nil {
 		return err
 	}
-	if err = outfile.Chmod(0400); err != nil {
-		return err
-	}
-	return nil
+	return outfile.Chmod(0400)
 }
 
 // SavePrivRsa saves a given RSA private key to a given filename.
@@ -82,10 +79,10 @@ func SavePubRsa(filename string, pubkey rsa.PublicKey) error {
 func SavePrivRsa(filename string, privkey *rsa.PrivateKey) error {
 	log.Printf("Writing private key to %s\n", filename)
 	outfile, err := os.Create(filename)
-	defer outfile.Close()
 	if err != nil {
 		return err
 	}
+	defer outfile.Close()
 	var pemkey = &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privkey),
@@ -93,10 +90,7 @@ func SavePrivRsa(filename string, privkey *rsa.PrivateKey) error {
 	if err = pem.Encode(outfile, pemkey); err != nil {
 		return err
 	}
-	if err = outfile.Chmod(0400); err != nil {
-		return err
-	}
-	return nil
+	return outfile.Chmod(0400)
 }
 
 // LoadRsaKeyFromFile loads a RSA private key from a given filename.

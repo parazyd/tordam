@@ -48,16 +48,9 @@ func SavePubEd25519(filename string, key ed25519.PublicKey) error {
 	log.Println("Writing ed25519 public key to", filename)
 	const pkprefix = "== ed25519v1-public: type0 =="
 	var pub []byte
-	for _, i := range []byte(pkprefix) {
-		pub = append(pub, i)
-	}
-	for _, i := range []byte(key) {
-		pub = append(pub, i)
-	}
-	if err := ioutil.WriteFile(filename, pub, 0600); err != nil {
-		return err
-	}
-	return nil
+	pub = append(pub, []byte(pkprefix)...)
+	pub = append(pub, []byte(key)...)
+	return ioutil.WriteFile(filename, pub, 0600)
 }
 
 // SavePrivEd25519 writes a ed25519.PrivateKey type to a given string filename.
@@ -66,16 +59,9 @@ func SavePrivEd25519(filename string, key ed25519.PrivateKey) error {
 	log.Println("Writing ed25519 private key to", filename)
 	const skprefix = "== ed25519v1-secret: type0 =="
 	var sec []byte
-	for _, i := range []byte(skprefix) {
-		sec = append(sec, i)
-	}
-	for _, i := range []byte(key) {
-		sec = append(sec, i)
-	}
-	if err := ioutil.WriteFile(filename, sec, 0600); err != nil {
-		return err
-	}
-	return nil
+	sec = append(sec, []byte(skprefix)...)
+	sec = append(sec, []byte(key)...)
+	return ioutil.WriteFile(filename, sec, 0600)
 }
 
 // OnionFromPubkeyEd25519 generates a valid onion address from a given ed25519
@@ -101,24 +87,16 @@ func OnionFromPubkeyEd25519(pubkey ed25519.PublicKey) []byte {
 	const versConst = '\x03'
 
 	var h []byte
-	for _, i := range []byte(hashConst) {
-		h = append(h, i)
-	}
-	for _, i := range []byte(pubkey) {
-		h = append(h, i)
-	}
+	h = append(h, []byte(hashConst)...)
+	h = append(h, []byte(pubkey)...)
 	h = append(h, byte(versConst))
 
 	csum := sha3.Sum256(h)
 	checksum := csum[:2]
 
 	var enc []byte
-	for _, i := range []byte(pubkey) {
-		enc = append(enc, i)
-	}
-	for _, i := range checksum {
-		enc = append(enc, i)
-	}
+	enc = append(enc, []byte(pubkey)...)
+	enc = append(enc, checksum...)
 	enc = append(enc, byte(versConst))
 
 	encoded := base32.StdEncoding.EncodeToString(enc)
