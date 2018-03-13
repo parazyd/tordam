@@ -34,7 +34,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -162,16 +161,14 @@ func fetchDirlist(locations []string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		dirStr := string(dirs)
-		_dirs := strings.Split(dirStr, "\n")
-		for _, j := range _dirs {
-			if strings.HasPrefix(j, "DIR:") {
-				t := strings.Split(j, "DIR:")
-				if !(lib.StringInSlice(t[1], dirSlice)) {
-					dirSlice = append(dirSlice, t[1])
-				}
-			}
-		}
+		dirSlice = lib.ParseDirs(dirSlice, dirs)
+	}
+
+	// Local ~/.dam/directories.txt
+	if _, err := os.Stat("directories.txt"); err == nil {
+		dirs, err := ioutil.ReadFile("directories.txt")
+		lib.CheckError(err)
+		dirSlice = lib.ParseDirs(dirSlice, dirs)
 	}
 
 	// Local nodes known to redis

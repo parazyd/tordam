@@ -25,6 +25,7 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"log"
+	"strings"
 )
 
 // CheckError is a handler for errors. It takes an error type as an argument,
@@ -61,4 +62,20 @@ func GzipEncode(data []byte) (string, error) {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(b.Bytes()), nil
+}
+
+// ParseDirs parses and appends a given slice of bytes and returns an appended
+// slice of strings with new contents.
+func ParseDirs(sl []string, data []byte) []string {
+	dirStr := string(data)
+	_dirs := strings.Split(dirStr, "\n")
+	for _, j := range _dirs {
+		if strings.HasPrefix(j, "DIR:") {
+			t := strings.Split(j, "DIR:")
+			if !(StringInSlice(t[1], sl)) {
+				sl = append(sl, t[1])
+			}
+		}
+	}
+	return sl
 }
