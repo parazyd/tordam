@@ -8,7 +8,7 @@ pidfile="/var/run/dam-client.pid"
 description="Tor DAM client"
 
 depend() {
-	after tor dam-dir
+	after tor dam-dir ntp
 }
 
 start() {
