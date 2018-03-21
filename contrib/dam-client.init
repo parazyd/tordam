@@ -14,6 +14,8 @@ depend() {
 start() {
 	ebegin "Starting $description"
 	_h="$(getent passwd $damuid | cut -d: -f6)"
+	mkdir -p $(dirname $damlog)
+	chown $damuid:$damgid $(dirname $damlog)
 	supervise-daemon -d $_h -e HOME=$_h -u $damuid -g $damgid \
 		--pidfile $pidfile -1 $damlog -2 $damlog \
 		--start $command
