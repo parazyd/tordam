@@ -15,14 +15,16 @@ depend() {
 start() {
 	ebegin "Starting $description"
 	_h="$(getent passwd $damuid | cut -d: -f6)"
-	start-stop-daemon --start --background -u $damuid -g $damgid \
-		--make-pidfile --pidfile $pidfile \
-		--startas /bin/sh -- -c "export HOME=$_h && exec $command >> $damlog 2>&1"
+	supervise-daemon -d $_h -e HOME=$_h -u $damuid -g $damgid \
+		--pidfile $pidfile -1 $damlog -2 $damlog \
+		--start $command
 }
 
 stop() {
 	ebegin "Stopping $description"
-	_chld="$(pgrep -P $(cat $pidfile) | tr '\n' ' ')"
-	kill $_chld || true
-	start-stop-daemon --stop --pidfile $pidfile
+	ddir="$(pgrep -P $(cat $pidfile))"
+	rdis="$(pgrep -P $ddir)"
+	supervise-daemon --stop $command -p $pidfile
+	kill $rdis || true
+	kill $ddir || true
 }
