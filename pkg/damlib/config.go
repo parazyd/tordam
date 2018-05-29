@@ -42,7 +42,7 @@ const ProxyAddr = "127.0.0.1:9050"
 
 // TorPortMap is a comma-separated string holding the mapping of ports
 // to be opened by the Tor Hidden Service. Format is "remote:local".
-const TorPortMap = "80:49371,13010:13010"
+const TorPortMap = "80:49371,13010:13010,13011:13011,5000:5000"
 
 // DirPort is the port where dam-dir will be listening.
 const DirPort = 49371
