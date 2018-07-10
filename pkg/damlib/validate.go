@@ -155,7 +155,7 @@ func ValidateFirstHandshake(req map[string]string) (bool, string) {
 	if ex != 1 { // We did not have this node in redis.
 		info["pubkey"] = pub
 		info["firstseen"] = time.Now().Unix()
-		info["valid"] = 0
+		info["valid"] = 1
 	}
 
 	log.Printf("%s: writing to redis\n", req["address"])
