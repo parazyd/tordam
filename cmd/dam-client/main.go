@@ -28,6 +28,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -155,13 +156,15 @@ func fetchDirlist(locations []string) ([]string, error) {
 	log.Println("Grabbing a list of directories.")
 
 	// Remote network entry points
-	for _, i := range locations {
-		log.Println("Fetching", i)
-		dirs, err := lib.HTTPDownload(i)
-		if err != nil {
-			return nil, err
+	if !(lib.Noremote) {
+		for _, i := range locations {
+			log.Println("Fetching", i)
+			dirs, err := lib.HTTPDownload(i)
+			if err != nil {
+				return nil, err
+			}
+			dirSlice = lib.ParseDirs(dirSlice, dirs)
 		}
-		dirSlice = lib.ParseDirs(dirSlice, dirs)
 	}
 
 	// Local ~/.dam/directories.txt
@@ -202,6 +205,15 @@ func fetchDirlist(locations []string) ([]string, error) {
 }
 
 func main() {
+	var d bool
+
+	flag.BoolVar(&d, "d", false, "Don't fetch remote entry points")
+	flag.Parse()
+
+	if d {
+		lib.Noremote = true
+	}
+
 	if _, err := os.Stat(lib.Cwd); os.IsNotExist(err) {
 		err := os.Mkdir(lib.Cwd, 0700)
 		lib.CheckError(err)

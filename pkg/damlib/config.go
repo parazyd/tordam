@@ -50,3 +50,7 @@ const DirPort = 49371
 // Testnet is flipped with a flag in dam-dir and represents if all new
 // nodes are initially marked valid or not.
 var Testnet = false
+
+// Noremote is flipped with a flag in dam-client and disables fetching
+// remote entry points (directories) if enabled.
+var Noremote = false
