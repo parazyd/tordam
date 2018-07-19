@@ -22,6 +22,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -213,6 +214,14 @@ func handleElse(rw http.ResponseWriter, request *http.Request) {}
 
 func main() {
 	var wg sync.WaitGroup
+	var t bool
+
+	flag.BoolVar(&t, "t", false, "Mark all new nodes valid initially")
+	flag.Parse()
+
+	if t {
+		lib.Testnet = true
+	}
 
 	// Chdir to our working directory.
 	if _, err := os.Stat(lib.Cwd); os.IsNotExist(err) {
