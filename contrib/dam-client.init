@@ -18,7 +18,7 @@ start() {
 	chown $damuid:$damgid $(dirname $damlog)
 	supervise-daemon -d $_h -e HOME=$_h -u $damuid -g $damgid \
 		--pidfile $pidfile -1 $damlog -2 $damlog \
-		--start $command
+		--start $command $damopts
 }
 
 stop() {
