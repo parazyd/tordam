@@ -7,7 +7,7 @@ all:
 
 install:
 	@make -C python install
-	@make -C contrib install
+	@make -C contrib install install-init
 
 uninstall:
 	@make -C python uninstall
