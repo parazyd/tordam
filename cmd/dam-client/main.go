@@ -206,8 +206,10 @@ func fetchDirlist(locations []string) ([]string, error) {
 
 func main() {
 	var d bool
+	var ai int
 
 	flag.BoolVar(&d, "d", false, "Don't fetch remote entry points")
+	flag.IntVar(&ai, "ai", 10, "Announce interval in minutes")
 	flag.Parse()
 
 	if d {
@@ -315,8 +317,8 @@ func main() {
 		} else {
 			log.Printf("Successfully authenticated with %d nodes.\n", ann)
 		}
-		log.Println("Waiting 10 minutes before next announce.")
-		time.Sleep(600 * time.Second)
+		log.Printf("Waiting %d min. before next announce.\n", ai)
+		time.Sleep(time.Duration(ai) * time.Minute)
 	}
 
 	//err = cmd.Wait() // Hidden service Python daemon
