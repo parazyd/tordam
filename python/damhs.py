@@ -54,7 +54,7 @@ def main():
         portmap[int(tup[0])] = int(tup[1])
 
     keyfile = argv[1]
-    ktype = 'RSA1024'
+    ktype = 'RSA1024'  # ED25519-V3
     kcont = open(keyfile).read()
     kcont = kcont.replace('\n', '')
     kcont = kcont.replace('-----BEGIN RSA PRIVATE KEY-----', '')

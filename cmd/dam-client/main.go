@@ -205,11 +205,11 @@ func main() {
 	var dh string
 	var dirHosts []string
 
-	flag.BoolVar(&d, "d", false, "Don't fetch remote entry points")
-	flag.BoolVar(&gen, "gen", false, "Only (re)generate keypairs and exit cleanly")
-	flag.IntVar(&ai, "ai", 10, "Announce interval in minutes")
+	flag.BoolVar(&d, "d", false, "Don't fetch remote entry points.")
+	flag.BoolVar(&gen, "gen", false, "Only (re)generate keypairs and exit cleanly.")
+	flag.IntVar(&ai, "ai", 10, "Announce interval in minutes.")
 	flag.StringVar(&dh, "dh", "https://dam.decodeproject.eu/dirs.txt",
-		"A remote list of entry points/directories (comma-separated)")
+		"A remote list of entry points/directories. (comma-separated)")
 	flag.Parse()
 
 	if d {
@@ -320,6 +320,7 @@ func main() {
 		wg.Wait()
 
 		if ann < 1 {
+			// TODO: Should we bail out at this point or not?
 			cmd.Process.Kill()
 			log.Fatalln("No successful authentications. Exiting.")
 		} else {
