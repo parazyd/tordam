@@ -35,6 +35,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,12 +44,6 @@ import (
 
 type msgStruct struct {
 	Secret string
-}
-
-// Network entry points. These files hold the lists of directories we can
-// announce to. Format is "DIR:22mobp7vrb7a4gt2.onion", other lines are ignored.
-var dirHosts = []string{
-	"https://dam.decodeproject.eu/dirs.txt",
 }
 
 func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool, error) {
@@ -207,14 +202,22 @@ func fetchDirlist(locations []string) ([]string, error) {
 func main() {
 	var d bool
 	var ai int
+	var dh string
+	var dirHosts []string
 
 	flag.BoolVar(&d, "d", false, "Don't fetch remote entry points")
 	flag.IntVar(&ai, "ai", 10, "Announce interval in minutes")
+	flag.StringVar(&dh, "dh", "https://dam.decodeproject.eu/dirs.txt",
+		"A remote list of entry points/directories (comma-separated)")
 	flag.Parse()
 
 	if d {
 		lib.Noremote = true
 	}
+
+	// Network entry points. These files hold the lists of directories we can
+	// announce to. Format is "DIR:22mobp7vrb7a4gt2.onion", other lines are ignored.
+	dirHosts = strings.Split(dh, ",")
 
 	if _, err := os.Stat(lib.Cwd); os.IsNotExist(err) {
 		err := os.Mkdir(lib.Cwd, 0700)
