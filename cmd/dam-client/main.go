@@ -200,12 +200,13 @@ func fetchDirlist(locations []string) ([]string, error) {
 }
 
 func main() {
-	var d bool
+	var d, gen bool
 	var ai int
 	var dh string
 	var dirHosts []string
 
 	flag.BoolVar(&d, "d", false, "Don't fetch remote entry points")
+	flag.BoolVar(&gen, "gen", false, "Only (re)generate keypairs and exit cleanly")
 	flag.IntVar(&ai, "ai", 10, "Announce interval in minutes")
 	flag.StringVar(&dh, "dh", "https://dam.decodeproject.eu/dirs.txt",
 		"A remote list of entry points/directories (comma-separated)")
@@ -226,7 +227,8 @@ func main() {
 	err := os.Chdir(lib.Cwd)
 	lib.CheckError(err)
 
-	if _, err := os.Stat(lib.PrivKeyPath); os.IsNotExist(err) {
+	if _, err := os.Stat(lib.PrivKeyPath); os.IsNotExist(err) || gen {
+		os.Chmod(lib.PrivKeyPath, 0600)
 		key, err := lib.GenRsa(lib.RsaBits)
 		lib.CheckError(err)
 		err = lib.SavePrivRsa(lib.PrivKeyPath, key)
@@ -236,6 +238,9 @@ func main() {
 		err = ioutil.WriteFile("hostname", onionaddr, 0644)
 		lib.CheckError(err)
 		log.Println("Our hostname is:", string(onionaddr))
+		if gen {
+			os.Exit(0)
+		}
 	}
 
 	// Start up the hidden service
