@@ -174,6 +174,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 					lib.CheckError(err)
 					if nodedata["valid"] == "1" {
 						nodemap[i] = nodedata
+						delete(nodemap[i], "secret")
 					}
 				}
 			} else {
@@ -183,6 +184,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 				nodedata, err := lib.RedisCli.HGetAll(us).Result()
 				lib.CheckError(err)
 				nodemap[us] = nodedata
+				delete(nodemap[us], "secret")
 			}
 
 			nodestr, err := json.Marshal(nodemap)
