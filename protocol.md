@@ -4,44 +4,41 @@ Tor DAM Protocol
 Abstract
 --------
 
-* Every node can be an opt-in directory.
-  * This implies running the directory daemon on the node.
-* Every directory has a HTTP API allowing to list other nodes and
-  announce new ones.
-* They keep propagating to all valid nodes/directories they know.
+* Every node has a HTTP API allowing to list other nodes and announce
+  new ones.
+* They keep propagating to all valid nodes they know.
 * Announcing implies the need of knowledge of at least one or two nodes.
   * It is possible to make this random enough once there are at least 6
     nodes in the network.
-* A node announces itself to directories by sending a JSON-formatted
-  HTTP POST request to one or more active nodes/directories.
-  * Once the POST request is received, the directory will validate the
+* A node announces itself to others by sending a JSON-formatted HTTP
+  POST request to one or more active node.
+  * Once the POST request is received, the node will validate the
     request and return a secret encrypted with the requester's public
-	key.
+    key.
   * The requester will try to decrypt this secret, and return it plain
-    back to the directory, along with a cryptographic signature, so the
-	directory can confirm the requester is in actual possession of the
-	private key.
-* Tor DAM **does not validate** if a node is malicious or not. This is
-  a layer that has to be established on top. Tor-DAM is just the entry
+    back to the node it's announcing to, along with a cryptographic
+    signature, so the node can confirm the requester is in actual
+    possession of the private key.
+* Tor DAM **does not validate** if a node is malicious or not. This is a
+  layer that has to be established on top. Tor DAM is just the entry
   point into the network.
-* A node can become a directory once it is proven valid (not malicious).
 
 
 Protocol
 --------
 
-A node announcing itself has to do a JSON-formatted HTTP POST request
-to one or more active directories with the format explained below.
-N.B. The strings shown in this document might not be valid, but they
-represent a correct example.
+A node announcing itself has to do a JSON-formatted HTTP POST request to
+one or more active nodes with the format explained below.  N.B. The
+strings shown in this document might not be valid, but they represent a
+correct example.
 
-* `type` reflects the type of the node (node/directory)
+* `type` reflects the type of the node
 * `address` holds the address of the Tor hidden service
 * `message` is the message that has to be signed using the private key
   of this same hidden service.
 * `signature` is the base64 encoded signature of the above message.
-* `secret` is a string that is used for exchanging messages between
-  the client and server.
+* `secret` is a string that is used for exchanging messages between the
+  client and server.
 
 
 ```
@@ -54,15 +51,15 @@ represent a correct example.
 }
 ```
 
-Sending this as a POST request to a directory will make the directory
-ask for the public key of the given address from a HSDir in the Tor
-network. It will retrieve the public key and try to validate the
-signature that was made. Validating this, we assume that the requester
-is in possession of the private key.
+Sending this as a POST request to a node will make it ask for the public
+key of the given address from a HSDir in the Tor network. It will
+retrieve the public key and try to validate the signature that was made.
+Validating this, we assume that the requester is in possession of the
+private key.
 
-Following up, the directory will generate a cryptographically secure
-random string and encrypt it using the before acquired public key. It
-will then be encoded using base64 and sent back to the client:
+Following up, the node shall generate a cryptographically secure random
+string and encrypt it using the before acquired public key. It will then
+be encoded using base64 and sent back to the client:
 
 
 ```
@@ -72,9 +69,9 @@ will then be encoded using base64 and sent back to the client:
 ```
 
 The client will try to decode and decrypt this secret, and send it back
-to the directory to complete its part of the handshake. The POST request
-this time will contain the following data:
-* `type` reflects the type of the node (node/directory)
+to the node to complete its part of the handshake. The POST request this
+time will contain the following data:
+* `type` reflects the type of the node
 * `address` holds the address of the Tor hidden service
 * `message` is the decrypted and base64 encoded secret that the server
   had just sent us.
@@ -92,7 +89,7 @@ this time will contain the following data:
 }
 ```
 
-The directory will verify the received plain secret against what it has
+The node will verify the received plain secret against what it has
 encrypted to validate. If the comparison yields no errors, we assume
 that the requester is actually in possession of the private key. If the
 node is not valid in our database, we will complete the handshake by
@@ -105,13 +102,13 @@ welcoming the client into the network:
 }
 ```
 
-Further on, the directory will append useful metadata to the struct.
-We will add the encoded public key, timestamps of when the client was
-first seen and last seen, and a field to indicate if the node is valid.
-The latter is not to be handled by Tor-DAM, but rather the upper layer,
-which actually has consensus handling.
+Further on, the node will append useful metadata to the struct.  We will
+add the encoded public key, timestamps of when the client was first seen
+and last seen, and a field to indicate if the node is valid.  The latter
+is not to be handled by Tor DAM, but rather the upper layer, which
+actually has consensus handling.
 
-If the node is valid in the directory's database, the directory will
+If the node is valid in another node's database, the remote node will
 then propagate back all the valid nodes it knows (including itself) back
 to the client in a gzipped and base64 encoded JSON struct. The client
 will then handle this and update its own database accordingly.
