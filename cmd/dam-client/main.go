@@ -174,7 +174,12 @@ func fetchDirlist(locations []string) ([]string, error) {
 	lib.CheckError(err)
 	for _, i := range nodes {
 		valid, err := lib.RedisCli.HGet(i, "valid").Result()
-		lib.CheckError(err)
+		if err != nil {
+			// Possible RedisCli bug, possible Redis bug. To be investigated.
+			// Sometimes it returns err, but it's nil and does not say what's
+			// happening exactly.
+			continue
+		}
 		if valid == "1" {
 			dirSlice = append(dirSlice, i)
 		}
