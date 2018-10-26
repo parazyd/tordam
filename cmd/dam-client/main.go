@@ -179,6 +179,17 @@ func fetchDirlist(locations []string) ([]string, error) {
 		}
 	}
 
+	// Remove possible duplicats. Dupes can cause race conditions and are
+	// redundant to the whole logic.
+	encounter := map[string]bool{}
+	for j := range dirSlice {
+		encounter[dirSlice[j]] = true
+	}
+	dirSlice = []string{}
+	for key := range encounter {
+		dirSlice = append(dirSlice, key)
+	}
+
 	if len(dirSlice) < 1 {
 		log.Fatalln("Couldn't get any directories. Exiting.")
 	} else if len(dirSlice) <= 6 {
