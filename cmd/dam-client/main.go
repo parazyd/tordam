@@ -212,7 +212,7 @@ func main() {
 
 	flag.BoolVar(&d, "d", false, "Don't fetch remote entry points.")
 	flag.BoolVar(&gen, "gen", false, "Only (re)generate keypairs and exit cleanly.")
-	flag.IntVar(&ai, "ai", 10, "Announce interval in minutes.")
+	flag.IntVar(&ai, "ai", 5, "Announce interval in minutes.")
 	flag.StringVar(&dh, "dh", "https://dam.decodeproject.eu/dirs.txt",
 		"A remote list of entry points/directories. (comma-separated)")
 	flag.Parse()
