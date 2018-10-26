@@ -58,6 +58,11 @@ func startRedis() {
 
 	_, err = lib.RedisCli.Ping().Result()
 	lib.CheckError(err)
+
+	PubSub := lib.RedisCli.Subscribe(lib.PubSubChan)
+	_, err = PubSub.Receive()
+	lib.CheckError(err)
+	log.Printf("Created \"%s\" channel in redis\n", lib.PubSubChan)
 }
 
 func postback(rw http.ResponseWriter, data map[string]string, retCode int) error {
@@ -185,12 +190,16 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 			if err := postback(rw, ret, 200); err != nil {
 				lib.CheckError(err)
 			}
+
+			lib.PublishToRedis(n.Address)
+
 			return
 		}
 
 		// If we have't returned so far, the handshake is invalid.
 		log.Printf("%s: 2/2 handshake invalid.\n", n.Address)
 		// Delete it all from redis.
+		// TODO: Also pubsub here.
 		_, err := lib.RedisCli.Del(n.Address).Result()
 		lib.CheckError(err)
 		if err := postback(rw, ret, 400); err != nil {

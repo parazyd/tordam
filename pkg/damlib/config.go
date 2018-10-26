@@ -31,6 +31,9 @@ const RsaBits = 1024
 // PrivKeyPath holds the name of where our private key is.
 const PrivKeyPath = "dam-private.key"
 
+// PubSubChan is the name of the pub/sub channel we're publishing to in Redis.
+const PubSubChan = "tordam"
+
 // PostMsg holds the message we are signing with our private key.
 const PostMsg = "I am a DAM node!"
 
