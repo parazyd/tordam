@@ -34,7 +34,6 @@ import (
 	"math/big"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -50,11 +49,6 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 	msg, err := json.Marshal(vals)
 	if err != nil {
 		return false, err
-	}
-
-	if dir == "localhost" || dir == "127.0.0.1" {
-		// Modify the string if we are authenticating to ourself.
-		dir += ":" + strconv.Itoa(lib.DirPort)
 	}
 
 	log.Println("Announcing keypair to:", dir)
@@ -200,7 +194,6 @@ func fetchDirlist(locations []string) ([]string, error) {
 			dirSlice = dirSlice[:len(dirSlice)-1]
 		}
 	}
-	dirlist = append(dirlist, "localhost")
 	return dirlist, nil
 }
 
