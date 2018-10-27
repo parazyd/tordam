@@ -223,7 +223,7 @@ func pollNodeTTL(interval int64) {
 			lastseen, err := strconv.Atoi(res)
 			lib.CheckError(err)
 
-			diff := int64((now - int64(lastseen)) / 60)
+			diff := (now - int64(lastseen)/60)
 			if diff > interval {
 				log.Printf("Deleting %s from redis because of expiration\n", i)
 				lib.PublishToRedis("d", i)
