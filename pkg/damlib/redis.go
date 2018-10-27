@@ -38,7 +38,7 @@ var RedisCli = redis.NewClient(&redis.Options{
 
 // PublishToRedis is a function that publishes a node's status to Redis.
 // This is used for Gource visualization.
-func PublishToRedis(address string) {
+func PublishToRedis(mt, address string) {
 	var timestamp, username, modtype, onion, pubstr string
 
 	nodedata, err := RedisCli.HGetAll(address).Result()
@@ -47,6 +47,8 @@ func PublishToRedis(address string) {
 	timestamp = nodedata["lastseen"]
 	if timestamp == nodedata["firstseen"] {
 		modtype = "A"
+	} else if mt == "d" {
+		modtype = "D"
 	} else {
 		modtype = "M"
 	}

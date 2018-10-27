@@ -192,7 +192,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 				lib.CheckError(err)
 			}
 
-			lib.PublishToRedis(n.Address)
+			lib.PublishToRedis("am", n.Address)
 
 			return
 		}
@@ -200,7 +200,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		// If we have't returned so far, the handshake is invalid.
 		log.Printf("%s: 2/2 handshake invalid.\n", n.Address)
 		// Delete it all from redis.
-		// TODO: Also pubsub here.
+		lib.PublishToRedis("d", n.Address)
 		_, err := lib.RedisCli.Del(n.Address).Result()
 		lib.CheckError(err)
 		if err := postback(rw, ret, 400); err != nil {
@@ -226,7 +226,7 @@ func pollNodeTTL(interval int64) {
 			diff := int64((now - int64(lastseen)) / 60)
 			if diff > interval {
 				log.Printf("Deleting %s from redis because of expiration\n", i)
-				// TODO: Redis pubsub
+				lib.PublishToRedis("d", i)
 				lib.RedisCli.Del(i)
 			}
 		}
