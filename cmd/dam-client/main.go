@@ -329,9 +329,7 @@ func main() {
 		wg.Wait()
 
 		if ann < 1 {
-			// TODO: Should we bail out at this point or not?
-			cmd.Process.Kill()
-			log.Fatalln("No successful authentications. Exiting.")
+			log.Println("No successful authentications.")
 		} else {
 			log.Printf("Successfully authenticated with %d nodes.\n", ann)
 		}
