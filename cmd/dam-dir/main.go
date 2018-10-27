@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"sync"
 	"time"
 
@@ -209,6 +210,30 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	}
 }
 
+func pollNodeTTL(interval int64) {
+	for {
+		log.Println("Polling redis for expired nodes")
+		nodes, err := lib.RedisCli.Keys("*.onion").Result()
+		lib.CheckError(err)
+		now := time.Time.Unix(time.Now())
+
+		for _, i := range nodes {
+			res, err := lib.RedisCli.HGet(i, "lastseen").Result()
+			lib.CheckError(err)
+			lastseen, err := strconv.Atoi(res)
+			lib.CheckError(err)
+
+			diff := int64((now - int64(lastseen)) / 60)
+			if diff > interval {
+				log.Printf("Deleting %s from redis because of expiration\n", i)
+				// TODO: Redis pubsub
+				lib.RedisCli.Del(i)
+			}
+		}
+		time.Sleep(time.Duration(interval) * time.Minute)
+	}
+}
+
 // handleElse is a noop for anything that isn't /announce. We don't care about
 // other requests (yet).
 func handleElse(rw http.ResponseWriter, request *http.Request) {}
@@ -216,8 +241,10 @@ func handleElse(rw http.ResponseWriter, request *http.Request) {}
 func main() {
 	var wg sync.WaitGroup
 	var t bool
+	var ttl int64
 
 	flag.BoolVar(&t, "t", false, "Mark all new nodes valid initially")
+	flag.Int64Var(&ttl, "ttl", 0, "Set expiry time in minutes (TTL) for nodes")
 	flag.Parse()
 
 	if t {
@@ -249,6 +276,12 @@ func main() {
 	wg.Add(1)
 	go srv.ListenAndServe()
 	log.Println("Listening on", ListenAddress)
+
+	if ttl > 0 {
+		log.Println("Enabling TTL polling.")
+		go pollNodeTTL(ttl)
+	}
+
 	wg.Wait()
 	os.Exit(1)
 }
