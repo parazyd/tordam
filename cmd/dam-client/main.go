@@ -45,6 +45,28 @@ type msgStruct struct {
 	Secret string
 }
 
+func clientInit(gen bool) {
+	err := os.Chmod(lib.PrivKeyPath, 0600)
+	lib.CheckError(err)
+
+	key, err := lib.GenRsa(lib.RsaBits)
+	lib.CheckError(err)
+
+	err = lib.SavePrivRsa(lib.PrivKeyPath, key)
+	lib.CheckError(err)
+
+	onionaddr, err := lib.OnionFromPubkeyRsa(key.PublicKey)
+	lib.CheckError(err)
+
+	err = ioutil.WriteFile("hostname", onionaddr, 0644)
+	lib.CheckError(err)
+
+	log.Printf("Our hostname is: %s\n", string(onionaddr))
+	if gen {
+		os.Exit(0)
+	}
+}
+
 func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool, error) {
 	msg, err := json.Marshal(vals)
 	if err != nil {
@@ -236,20 +258,8 @@ func main() {
 	err := os.Chdir(lib.Cwd)
 	lib.CheckError(err)
 
-	if _, err := os.Stat(lib.PrivKeyPath); os.IsNotExist(err) || gen {
-		os.Chmod(lib.PrivKeyPath, 0600)
-		key, err := lib.GenRsa(lib.RsaBits)
-		lib.CheckError(err)
-		err = lib.SavePrivRsa(lib.PrivKeyPath, key)
-		lib.CheckError(err)
-		onionaddr, err := lib.OnionFromPubkeyRsa(key.PublicKey)
-		lib.CheckError(err)
-		err = ioutil.WriteFile("hostname", onionaddr, 0644)
-		lib.CheckError(err)
-		log.Println("Our hostname is:", string(onionaddr))
-		if gen {
-			os.Exit(0)
-		}
+	if _, err = os.Stat(lib.PrivKeyPath); os.IsNotExist(err) || gen {
+		clientInit(gen)
 	}
 
 	// Start up the hidden service
@@ -269,7 +279,8 @@ func main() {
 		for !(ok) {
 			t2 := time.Now().Unix()
 			if t2-t1 > 90 {
-				cmd.Process.Kill()
+				err := cmd.Process.Kill()
+				lib.CheckError(err)
 				log.Fatalln("Too much time passed. Exiting.")
 			}
 			time.Sleep(1000 * time.Millisecond)
