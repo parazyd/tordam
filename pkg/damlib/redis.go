@@ -53,7 +53,7 @@ func PublishToRedis(address string) {
 	username = address
 	onion = address
 
-	pubstr = fmt.Sprintf("%s|%s|%s|%s\n", timestamp, username, modtype, onion)
+	pubstr = fmt.Sprintf("%s|%s|%s|%s", timestamp, username, modtype, onion)
 
 	RedisCli.Publish(PubSubChan, pubstr)
 }
