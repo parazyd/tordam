@@ -215,7 +215,7 @@ func pollNodeTTL(interval int64) {
 		log.Println("Polling redis for expired nodes")
 		nodes, err := lib.RedisCli.Keys("*.onion").Result()
 		lib.CheckError(err)
-		now := time.Time.Unix(time.Now())
+		now := time.Now().Unix()
 
 		for _, i := range nodes {
 			res, err := lib.RedisCli.HGet(i, "lastseen").Result()
