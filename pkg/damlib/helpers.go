@@ -20,12 +20,6 @@ package damlib
  * along with this source code. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #cgo LDFLAGS: -lzenroomgo
-//
-// #include <stdlib.h>
-// #include "zenroom.h"
-import "C"
-
 import (
 	"bytes"
 	"compress/gzip"
@@ -84,9 +78,4 @@ func ParseDirs(sl []string, data []byte) []string {
 		}
 	}
 	return sl
-}
-
-func ZenroomExec(script, conf, keys, data string, verbosity int) int {
-	return int(C.zenroom_exec(C.CString(script), C.CString(conf),
-		C.CString(keys), C.CString(data), C.int(verbosity)))
 }
