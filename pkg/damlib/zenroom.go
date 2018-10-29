@@ -40,7 +40,8 @@ func ZenroomExec(script, conf, keys, data string, verbosity int) int {
 // ZenroomExecToBuf is Zenroom's simple API call with buffers. It will return
 // stdout and stderr.
 func ZenroomExecToBuf(script, conf, keys, data string, verbosity int) (int, []byte, []byte) {
-	var bufsize = 1024 * 8
+	//var bufsize = 1024 * 8
+	var bufsize = 1024
 
 	outbuf := make([]byte, bufsize)
 	errbuf := make([]byte, bufsize)
