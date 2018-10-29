@@ -25,6 +25,7 @@ github.com/go-redis/redis
 ```
 
 #### Python 3
+
 ```
 https://stem.torproject.org/
 ```
@@ -46,3 +47,15 @@ to create hidden services and retrieve hidden service descriptors.
 Redis is our storage backend where information about nodes is held.
 
 Working configurations are provided in the `contrib` directory.
+
+
+#### Zenroom
+
+```
+https://github.com/decodeproject/zenroom
+```
+
+The shared library can be acquired by cloning the above repository and
+running `make linux-go`, which will compile a `.so` located in
+`build/go/libzenroomgo.so`. You will then need to install it on your
+system to a place such as `/usr/lib/`.
