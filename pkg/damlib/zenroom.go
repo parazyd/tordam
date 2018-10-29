@@ -25,7 +25,11 @@ package damlib
 // #include <stddef.h>
 // #include "zenroom.h"
 import "C"
-import "unsafe"
+
+import (
+	"bytes"
+	"unsafe"
+)
 
 // ZenroomExec is Zenroom's simple API call.
 func ZenroomExec(script, conf, keys, data string, verbosity int) int {
@@ -42,7 +46,8 @@ func ZenroomExecToBuf(script, conf, keys, data string, verbosity int) (int, []by
 	errbuf := make([]byte, bufsize)
 
 	return int(C.zenroom_exec_tobuf(C.CString(script), C.CString(conf),
-		C.CString(keys), C.CString(data), C.int(verbosity),
-		(*C.char)(unsafe.Pointer(&outbuf[0])), C.size_t(bufsize),
-		(*C.char)(unsafe.Pointer(&errbuf[0])), C.size_t(bufsize))), outbuf, errbuf
+			C.CString(keys), C.CString(data), C.int(verbosity),
+			(*C.char)(unsafe.Pointer(&outbuf[0])), C.size_t(bufsize),
+			(*C.char)(unsafe.Pointer(&errbuf[0])), C.size_t(bufsize))),
+		bytes.Trim(outbuf, "\x00"), bytes.Trim(errbuf, "\x00")
 }
