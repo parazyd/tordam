@@ -26,7 +26,7 @@ import (
 )
 
 func TestFetchHSPubkey(t *testing.T) {
-	pubkey := FetchHSPubkey("szpvqtyw3vbgzb3s.onion")
+	pubkey := FetchHSPubkey("facebookcorewwwi.onion")
 
 	if !strings.HasPrefix(pubkey, "-----BEGIN") {
 		t.Fatal("Did not get a public key.")
