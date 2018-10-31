@@ -34,8 +34,8 @@ import (
 // GenEd25519 generates an ed25519 keypair. Returns error on failure.
 func GenEd25519() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 	log.Println("Generating ed25519 keypair...")
-	rng := rand.Reader
-	pk, sk, err := ed25519.GenerateKey(rng)
+
+	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, nil, err
 	}
