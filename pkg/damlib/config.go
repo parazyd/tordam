@@ -31,6 +31,9 @@ const RsaBits = 1024
 // PrivKeyPath holds the name of where our private key is.
 const PrivKeyPath = "dam-private.key"
 
+// SeedPath holds the name of where our public key is.
+const SeedPath = "dam-private.seed"
+
 // PubSubChan is the name of the pub/sub channel we're publishing to in Redis.
 const PubSubChan = "tordam"
 

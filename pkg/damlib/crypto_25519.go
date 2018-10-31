@@ -23,6 +23,7 @@ package damlib
 import (
 	"crypto/rand"
 	"encoding/base32"
+	"encoding/base64"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -51,6 +52,32 @@ func SavePrivEd25519(filename string, key ed25519.PrivateKey) error {
 	sec = append(sec, []byte(skprefix)...)
 	sec = append(sec, []byte(key)...)
 	return ioutil.WriteFile(filename, sec, 0600)
+}
+
+// SaveSeedEd25519 saves the ed25519 private key seed to a given string filename
+// for later reuse. Returns error upon failure.
+func SaveSeedEd25519(filename string, key ed25519.PrivateKey) error {
+	log.Println("Writing ed25519 private key seed to", filename)
+
+	encoded := base64.StdEncoding.EncodeToString(key.Seed())
+	return ioutil.WriteFile(filename, []byte(encoded), 0600)
+}
+
+// LoadEd25519KeyFromSeed loads a key from a given seed file and returns
+// ed25519.PrivateKey. Otherwise, on failure, it returns error.
+func LoadEd25519KeyFromSeed(filename string) (ed25519.PrivateKey, error) {
+	log.Println("Loading ed25519 private key from seed in", filename)
+
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(string(data))
+	if err != nil {
+		return nil, err
+	}
+	return ed25519.NewKeyFromSeed(decoded), nil
 }
 
 // OnionFromPubkeyEd25519 generates a valid onion address from a given ed25519
