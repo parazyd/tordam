@@ -114,6 +114,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	req := map[string]string{
 		"address":   n.Address,
 		"message":   n.Message,
+		"pubkey":    n.Pubkey,
 		"signature": n.Signature,
 		"secret":    n.Secret,
 	}
@@ -124,7 +125,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		ret = map[string]string{"secret": msg}
 		if valid {
 			log.Printf("%s: 1/2 handshake valid.\n", n.Address)
-			log.Println("Sending back encrypted secret.")
+			log.Println("Sending nonce.")
 			if err := postback(rw, ret, 200); err != nil {
 				lib.CheckError(err)
 			}
@@ -237,16 +238,11 @@ func handleElse(rw http.ResponseWriter, request *http.Request) {}
 
 func main() {
 	var wg sync.WaitGroup
-	var t bool
 	var ttl int64
 
-	flag.BoolVar(&t, "t", false, "Mark all new nodes valid initially")
+	flag.BoolVar(&lib.Testnet, "t", false, "Mark all new nodes valid initially")
 	flag.Int64Var(&ttl, "ttl", 0, "Set expiry time in minutes (TTL) for nodes")
 	flag.Parse()
-
-	if t {
-		lib.Testnet = true
-	}
 
 	// Chdir to our working directory.
 	if _, err := os.Stat(lib.Workdir); os.IsNotExist(err) {
@@ -259,6 +255,10 @@ func main() {
 	if _, err := lib.RedisCli.Ping().Result(); err != nil {
 		// We assume redis is not running. Start it up.
 		startRedis()
+	}
+
+	if lib.Testnet {
+		log.Println("Will mark all nodes valid by default.")
 	}
 
 	mux := http.NewServeMux()
