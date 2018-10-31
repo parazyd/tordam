@@ -42,17 +42,6 @@ func GenEd25519() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 	return pk, sk, nil
 }
 
-// SavePubEd25519 writes a ed25519.PublicKey type to a given string filename.
-// Returns error upon failure.
-func SavePubEd25519(filename string, key ed25519.PublicKey) error {
-	log.Println("Writing ed25519 public key to", filename)
-	const pkprefix = "== ed25519v1-public: type0 =="
-	var pub []byte
-	pub = append(pub, []byte(pkprefix)...)
-	pub = append(pub, []byte(key)...)
-	return ioutil.WriteFile(filename, pub, 0600)
-}
-
 // SavePrivEd25519 writes a ed25519.PrivateKey type to a given string filename.
 // Returns error upon failure.
 func SavePrivEd25519(filename string, key ed25519.PrivateKey) error {
