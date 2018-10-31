@@ -50,17 +50,6 @@ func sanityCheck(req map[string]string, handshake int) (bool, string) {
 		return false, err.Error()
 	}
 
-	// TODO: When a node wants to promote itself from something it already was,
-	// what to do?
-	switch req["nodetype"] {
-	case "node":
-		log.Printf("%s is a node.", req["address"])
-	case "directory":
-		log.Printf("%s is a directory.", req["address"])
-	default:
-		return false, "Invalid nodetype."
-	}
-
 	if handshake == 2 {
 		if _, err := base64.StdEncoding.DecodeString(req["message"]); err != nil {
 			return false, err.Error()
@@ -145,7 +134,6 @@ func ValidateFirstHandshake(req map[string]string) (bool, string) {
 	encodedSecret := base64.StdEncoding.EncodeToString([]byte(randString))
 
 	var info = map[string]interface{}{
-		"nodetype":  req["nodetype"],
 		"address":   req["address"],
 		"message":   encodedSecret,
 		"signature": req["signature"],
@@ -241,7 +229,6 @@ func ValidateSecondHandshake(req map[string]string) (bool, string) {
 	encodedSecret := base64.StdEncoding.EncodeToString([]byte(randString))
 
 	var info = map[string]interface{}{
-		"nodetype":  req["nodetype"],
 		"address":   req["address"],
 		"message":   encodedSecret,
 		"signature": req["signature"],

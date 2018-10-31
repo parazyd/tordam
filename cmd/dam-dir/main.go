@@ -38,7 +38,6 @@ import (
 const ListenAddress = "127.0.0.1:49371"
 
 type nodeStruct struct {
-	Nodetype  string
 	Address   string
 	Message   string
 	Signature string
@@ -96,8 +95,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	}
 
 	// Bail out as soon as possible.
-	if len(n.Nodetype) == 0 || len(n.Address) == 0 ||
-		len(n.Message) == 0 || len(n.Signature) == 0 {
+	if len(n.Address) == 0 || len(n.Message) == 0 || len(n.Signature) == 0 {
 		ret = map[string]string{"secret": "Invalid request format."}
 		if err := postback(rw, ret, 400); err != nil {
 			lib.CheckError(err)
@@ -114,7 +112,6 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	}
 
 	req := map[string]string{
-		"nodetype":  n.Nodetype,
 		"address":   n.Address,
 		"message":   n.Message,
 		"signature": n.Signature,

@@ -307,7 +307,6 @@ func main() {
 		lib.CheckError(err)
 
 		nodevals := map[string]string{
-			"nodetype":  "node",
 			"address":   string(onionAddr),
 			"message":   lib.PostMsg,
 			"signature": encodedSig,
