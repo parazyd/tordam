@@ -22,21 +22,18 @@ package damlib
 
 import (
 	"encoding/base64"
-	"errors"
 	"log"
 	"regexp"
-	"strings"
 	"time"
+
+	"golang.org/x/crypto/ed25519"
 )
 
 // ValidateOnionAddress matches a string against a regular expression matching
 // a Tor hidden service address. Returns true on success and false on failure.
 func ValidateOnionAddress(addr string) bool {
-	re, _ := regexp.Compile(`^[a-z2-7](?:.{55}|.{15})\.onion`)
-	if len(re.FindString(addr)) == 22 || len(re.FindString(addr)) == 62 {
-		return true
-	}
-	return false
+	re, _ := regexp.Compile(`^[a-z2-7](?:.{55})\.onion`)
+	return len(re.FindString(addr)) == 62
 }
 
 // sanityCheck performs basic sanity checks against the incoming request.
@@ -61,69 +58,49 @@ func sanityCheck(req map[string]string, handshake int) (bool, string) {
 	return true, ""
 }
 
-// ValidateFirstHandshake validates the first incoming handshake.
-// It first calls sanityCheck to validate it's actually working with proper
-// data.
-// Next, it will look if the node is already found in redis. If so, it will
-// fetch its public hey from redis, otherwise it will run an external program to
-// fetch the node's public key from a Tor HSDir. If that program fails, so will
-// the function.
-// Once the public key is retrieved, it will validate the received message
-// signature against that key. If all is well, we consider the request valid.
-// Continuing, a random ASCII string will be generated and encrypted with the
-// retrieved public key. All this data will be written into redis, and finally
-// the encrypted (and base64 encoded) secret will be returned along with a true
-// boolean value.
-// On any failure, the function will return false, and produce an according
-// string which is to be considered as an error message.
+// ValidateFirstHandshake validates the first incoming handshake. It first calls
+// sanityCheck to validate it's actually working with proper data. Next, it will
+// look if the node is already found in redis. If so, it will fetch its public
+// hey from redis, otherwise it will take it from the initial request from the
+// incoming node.  Once the public key is retrieved, it will validate the
+// received message signature against that key. If all is well, we consider the
+// request valid.  Continuing, a random ASCII string will be generated and
+// encrypted with the retrieved public key. All this data will be written into
+// redis, and finally the encrypted (and base64 encoded) secret will be returned
+// along with a true boolean value.  On any failure, the function will return
+// false, and produce an according string which is to be considered as an error
+// message.
 func ValidateFirstHandshake(req map[string]string) (bool, string) {
 	if sane, what := sanityCheck(req, 1); !(sane) {
 		return false, what
 	}
 
 	// Get the public key.
-	var pub string
+	var pubstr string
+	var pubkey ed25519.PublicKey
 	// Check if we have seen this node already.
 	ex, err := RedisCli.Exists(req["address"]).Result()
 	CheckError(err)
 	if ex == 1 {
 		// We saw it so we should have the public key in redis.
 		// If we do not, that is an internal error.
-		pub, err = RedisCli.HGet(req["address"], "pubkey").Result()
+		pubstr, err = RedisCli.HGet(req["address"], "pubkey").Result()
 		CheckError(err)
-		// FIXME: Do a smarter check
-		if len(pub) < 20 {
-			CheckError(errors.New("Invalid data fetched from redis when requesting pubkey"))
-		}
 	} else {
-		// We fetch it from a HSDir
-		cnt := 0
-		for { // We try until we have it.
-			cnt++
-			if cnt > 10 {
-				// We probably can't get a good HSDir. The client shall retry
-				// later on.
-				return false, "Could not get a descriptor. Try later."
-			}
-			pub = FetchHSPubkey(req["address"])
-			if strings.HasPrefix(pub, "-----BEGIN RSA PUBLIC KEY-----") &&
-				strings.HasSuffix(pub, "-----END RSA PUBLIC KEY-----") {
-				log.Println("Got descriptor!")
-				break
-			}
-			time.Sleep(2000 * time.Millisecond)
-		}
+		// We take it from the announce.
+		pubstr = req["pubkey"]
 	}
 
 	// Validate signature.
 	msg := []byte(req["message"])
-	decSig, _ := base64.StdEncoding.DecodeString(req["signature"])
-	sig := decSig
-	pubkey, err := ParsePubkeyRsa([]byte(pub)) // pubkey is their public key in *rsa.PublicKey type
+	sig, _ := base64.StdEncoding.DecodeString(req["signature"])
+	deckey, err := base64.StdEncoding.DecodeString(pubstr)
 	CheckError(err)
-	if val, _ := VerifyMsgRsa(msg, sig, pubkey); !(val) {
-		log.Println("crypto/rsa: verification failure")
-		return false, "Signature verification failure."
+	pubkey = ed25519.PublicKey(deckey)
+
+	if !(ed25519.Verify(pubkey, msg, sig)) {
+		log.Println("crypto/ed25519: Signature verification failure.")
+		return false, "Signature verification vailure."
 	}
 
 	// The request is valid at this point.
@@ -141,7 +118,7 @@ func ValidateFirstHandshake(req map[string]string) (bool, string) {
 		"lastseen":  time.Now().Unix(),
 	} // Can not cast, need this for HMSet
 	if ex != 1 { // We did not have this node in redis.
-		info["pubkey"] = pub
+		info["pubkey"] = pubstr
 		info["firstseen"] = time.Now().Unix()
 		if Testnet {
 			info["valid"] = 1
@@ -158,11 +135,7 @@ func ValidateFirstHandshake(req map[string]string) (bool, string) {
 		return false, "Internal server error"
 	}
 
-	encryptedSecret, err := EncryptMsgRsa([]byte(randString), pubkey)
-	CheckError(err)
-
-	encryptedEncodedSecret := base64.StdEncoding.EncodeToString(encryptedSecret)
-	return true, encryptedEncodedSecret
+	return true, encodedSecret
 }
 
 // ValidateSecondHandshake validates the second part of the handshake.
@@ -184,19 +157,16 @@ func ValidateSecondHandshake(req map[string]string) (bool, string) {
 	}
 
 	// Get the public key.
-	var pub string
+	var pubstr string
+	var pubkey ed25519.PublicKey
 	// Check if we have seen this node already.
 	ex, err := RedisCli.Exists(req["address"]).Result()
 	CheckError(err)
 	if ex == 1 {
 		// We saw it so we should have the public key in redis.
 		// If we do not, that is an internal error.
-		pub, err = RedisCli.HGet(req["address"], "pubkey").Result()
+		pubstr, err = RedisCli.HGet(req["address"], "pubkey").Result()
 		CheckError(err)
-		// FIXME: Do a smarter check
-		if len(pub) < 20 {
-			CheckError(errors.New("Invalid data fetched from redis when requesting pubkey"))
-		}
 	} else {
 		log.Printf("%s tried to jump in 2/2 handshake before doing the first.\n", req["address"])
 		return false, "We have not seen you before. Please authenticate properly."
@@ -212,12 +182,13 @@ func ValidateSecondHandshake(req map[string]string) (bool, string) {
 
 	// Validate signature.
 	msg := []byte(req["message"])
-	decSig, _ := base64.StdEncoding.DecodeString(req["signature"])
-	sig := decSig
-	pubkey, err := ParsePubkeyRsa([]byte(pub)) // pubkey is their public key in *rsa.PublicKey type
+	sig, _ := base64.StdEncoding.DecodeString(req["signature"])
+	deckey, err := base64.StdEncoding.DecodeString(pubstr)
 	CheckError(err)
-	if val, _ := VerifyMsgRsa(msg, sig, pubkey); !(val) {
-		log.Printf("%s: Signature verification failure\n", req["address"])
+	pubkey = ed25519.PublicKey(deckey)
+
+	if !(ed25519.Verify(pubkey, msg, sig)) {
+		log.Println("crypto/ed25519: Signature verification failure")
 		return false, "Signature verification failure."
 	}
 
