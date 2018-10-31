@@ -118,21 +118,19 @@ func SignMsgEd25519(message []byte, key ed25519.PrivateKey) ([]byte, error) {
 //			- ".onion checksum" is a constant string
 //			- CHECKSUM is truncated to two bytes before inserting it in onion_address
 func OnionFromPubkeyEd25519(pubkey ed25519.PublicKey) []byte {
-	const hashConst = ".onion checksum"
-	const versConst = '\x03'
+	const salt = ".onion checksum"
+	const version = byte(0x03)
 
-	var h []byte
-	h = append(h, []byte(hashConst)...)
-	h = append(h, []byte(pubkey)...)
-	h = append(h, byte(versConst))
+	h := []byte(salt)
+	h = append(h, pubkey...)
+	h = append(h, version)
 
 	csum := sha3.Sum256(h)
 	checksum := csum[:2]
 
-	var enc []byte
-	enc = append(enc, []byte(pubkey)...)
+	enc := pubkey[:]
 	enc = append(enc, checksum...)
-	enc = append(enc, byte(versConst))
+	enc = append(enc, version)
 
 	encoded := base32.StdEncoding.EncodeToString(enc)
 	return []byte(strings.ToLower(encoded) + ".onion")
