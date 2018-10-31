@@ -22,6 +22,7 @@ package damlib
 
 import (
 	"crypto/rand"
+	"crypto/sha512"
 	"encoding/base32"
 	"encoding/base64"
 	"io/ioutil"
@@ -44,14 +45,19 @@ func GenEd25519() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 }
 
 // SavePrivEd25519 writes a ed25519.PrivateKey type to a given string filename.
-// Returns error upon failure.
+// Expands ed25519.PrivateKey to (a || RH) form, writing base64. Returns error
+// upon failure.
 func SavePrivEd25519(filename string, key ed25519.PrivateKey) error {
 	log.Println("Writing ed25519 private key to", filename)
-	const skprefix = "== ed25519v1-secret: type0 =="
-	var sec []byte
-	sec = append(sec, []byte(skprefix)...)
-	sec = append(sec, []byte(key)...)
-	return ioutil.WriteFile(filename, sec, 0600)
+
+	h := sha512.Sum512(key[:32])
+	// Set bits so that h[:32] is a private scalar "a".
+	h[0] &= 248
+	h[31] &= 127
+	h[31] |= 64
+	// Since h[32:] is RH, h is now (a || RH)
+	encoded := base64.StdEncoding.EncodeToString(h[:])
+	return ioutil.WriteFile(filename, []byte(encoded), 0600)
 }
 
 // SaveSeedEd25519 saves the ed25519 private key seed to a given string filename
