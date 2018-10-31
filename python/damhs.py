@@ -54,11 +54,8 @@ def main():
         portmap[int(tup[0])] = int(tup[1])
 
     keyfile = argv[1]
-    ktype = 'RSA1024'  # ED25519-V3
+    ktype = 'ED25519-V3'
     kcont = open(keyfile).read()
-    kcont = kcont.replace('\n', '')
-    kcont = kcont.replace('-----BEGIN RSA PRIVATE KEY-----', '')
-    kcont = kcont.replace('-----END RSA PRIVATE KEY-----', '')
 
     service = start_hs(ctl=ctl, ktype=ktype, kcont=kcont, portmap=portmap)
 

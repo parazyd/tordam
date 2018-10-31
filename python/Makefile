@@ -2,9 +2,7 @@
 
 PREFIX ?= /usr/local
 
-BIN =\
-	damhs.py \
-	damauth.py
+BIN = damhs.py
 
 all:
 	@echo 'Run "make install" to install to $(DESTDIR)$(PREFIX)/bin'
