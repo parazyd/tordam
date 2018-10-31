@@ -21,6 +21,7 @@ package damlib
  */
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/base32"
@@ -84,6 +85,18 @@ func LoadEd25519KeyFromSeed(filename string) (ed25519.PrivateKey, error) {
 		return nil, err
 	}
 	return ed25519.NewKeyFromSeed(decoded), nil
+}
+
+// SignMsgEd25519 signs a message using ed25519. Returns the signature in the
+// form of []byte, or returns an error if it fails.
+func SignMsgEd25519(message []byte, key ed25519.PrivateKey) ([]byte, error) {
+	log.Println("Signing message...")
+
+	sig, err := key.Sign(rand.Reader, message, crypto.Hash(0))
+	if err != nil {
+		return nil, err
+	}
+	return sig, nil
 }
 
 // OnionFromPubkeyEd25519 generates a valid onion address from a given ed25519
