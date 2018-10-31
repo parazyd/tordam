@@ -31,7 +31,7 @@ const RsaBits = 1024
 // PrivKeyPath holds the name of where our private key is.
 const PrivKeyPath = "dam-private.key"
 
-// SeedPath holds the name of where our public key is.
+// SeedPath holds the name of where our private key seed is.
 const SeedPath = "dam-private.seed"
 
 // PubSubChan is the name of the pub/sub channel we're publishing to in Redis.
@@ -56,7 +56,3 @@ const DirPort = 49371
 // Testnet is flipped with a flag in dam-dir and represents if all new
 // nodes are initially marked valid or not.
 var Testnet = false
-
-// Noremote is flipped with a flag in dam-client and disables fetching
-// remote entry points (directories) if enabled.
-var Noremote = false
