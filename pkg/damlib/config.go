@@ -25,9 +25,6 @@ import "os"
 // Workdir holds the path to the directory where we will Chdir on startup.
 var Workdir = os.Getenv("HOME") + "/.dam"
 
-// RsaBits holds the size of our RSA private key. Tor standard is 1024.
-const RsaBits = 1024
-
 // PrivKeyPath holds the name of where our private key is.
 const PrivKeyPath = "dam-private.key"
 

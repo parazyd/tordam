@@ -144,7 +144,7 @@ func ValidateFirstHandshake(req map[string]string) (bool, string) {
 // Next, the according public key will be retrieved from redis. If no key is
 // found, we will consider the handshake invalid.
 // Now the decrypted secret that was sent to us will be compared with what we
-// have saved before. Upon proving they are the same, the RSA signature will now
+// have saved before. Upon proving they are the same, the signature will now
 // be validated. If all is well, we consider the request valid.
 // Further on, we will generate a new random ASCII string and save it in redis
 // to prevent further reuse of the already known string. Upon success, the
