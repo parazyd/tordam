@@ -22,8 +22,8 @@ package damlib
 
 import "os"
 
-// Cwd holds the path to the directory where we will Chdir on startup.
-var Cwd = os.Getenv("HOME") + "/.dam"
+// Workdir holds the path to the directory where we will Chdir on startup.
+var Workdir = os.Getenv("HOME") + "/.dam"
 
 // RsaBits holds the size of our RSA private key. Tor standard is 1024.
 const RsaBits = 1024

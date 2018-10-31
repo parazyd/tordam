@@ -252,11 +252,11 @@ func main() {
 	}
 
 	// Chdir to our working directory.
-	if _, err := os.Stat(lib.Cwd); os.IsNotExist(err) {
-		err := os.Mkdir(lib.Cwd, 0700)
+	if _, err := os.Stat(lib.Workdir); os.IsNotExist(err) {
+		err := os.Mkdir(lib.Workdir, 0700)
 		lib.CheckError(err)
 	}
-	err := os.Chdir(lib.Cwd)
+	err := os.Chdir(lib.Workdir)
 	lib.CheckError(err)
 
 	if _, err := lib.RedisCli.Ping().Result(); err != nil {
