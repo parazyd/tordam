@@ -100,7 +100,7 @@ func fetchNodeList(epLists []string, noremote bool) ([]string, error) {
 	}
 
 	// Local nodes known to Redis
-	nodes, _ := lib.RedisCli.Keys(".onion").Result()
+	nodes, _ := lib.RedisCli.Keys("*.onion").Result()
 	for _, i := range nodes {
 		valid, err := lib.RedisCli.HGet(i, "valid").Result()
 		if err != nil {
