@@ -41,26 +41,26 @@ var RedisCli = redis.NewClient(&redis.Options{
 
 // StartRedis is the function that will start up the Redis server. Takes the
 // path to a configuration file as an argument and returns error upon failure.
-func StartRedis(conf string) error {
+func StartRedis(conf string) (*exec.Cmd, error) {
 	log.Println("Starting up redis-server...")
 	cmd := exec.Command("redis-server", conf)
 	err := cmd.Start()
 	if err != nil {
-		return err
+		return cmd, err
 	}
 
 	time.Sleep(500 * time.Millisecond)
 	if _, err := RedisCli.Ping().Result(); err != nil {
-		return err
+		return cmd, err
 	}
 
 	PubSub := RedisCli.Subscribe(PubSubChan)
 	if _, err := PubSub.Receive(); err != nil {
-		return err
+		return cmd, err
 	}
 
 	log.Printf("Created \"%s\" channel in Redis.\n", PubSubChan)
-	return nil
+	return cmd, nil
 }
 
 // PublishToRedis is a function that publishes a node's status to Redis.
