@@ -239,7 +239,8 @@ func main() {
 
 	if _, err := lib.RedisCli.Ping().Result(); err != nil {
 		// We assume redis is not running. Start it up.
-		_, err := lib.StartRedis(redconf)
+		cmd, err := lib.StartRedis(redconf)
+		defer cmd.Process.Kill()
 		lib.CheckError(err)
 	}
 

@@ -258,6 +258,7 @@ func main() {
 
 	log.Println("Starting up the hidden service.")
 	cmd := exec.Command("damhs.py", lib.PrivKeyPath, lib.TorPortMap)
+	defer cmd.Process.Kill()
 	stdout, err := cmd.StdoutPipe()
 	lib.CheckError(err)
 
@@ -272,8 +273,6 @@ func main() {
 		for !(ok) {
 			t2 := time.Now().Unix()
 			if t2-t1 > 90 {
-				err := cmd.Process.Kill()
-				lib.CheckError(err)
 				log.Fatalln("Too much time has passed for publishing descriptor.")
 			}
 			time.Sleep(1000 * time.Millisecond)
