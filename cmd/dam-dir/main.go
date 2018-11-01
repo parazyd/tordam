@@ -26,7 +26,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"sync"
 	"time"
@@ -46,23 +45,6 @@ type nodeStruct struct {
 	Firstseen int64
 	Lastseen  int64
 	Valid     int64
-}
-
-func startRedis() {
-	log.Println("Starting up redis-server...")
-	cmd := exec.Command("redis-server", "/usr/local/share/tor-dam/redis.conf")
-	err := cmd.Start()
-	lib.CheckError(err)
-
-	time.Sleep(500 * time.Millisecond)
-
-	_, err = lib.RedisCli.Ping().Result()
-	lib.CheckError(err)
-
-	PubSub := lib.RedisCli.Subscribe(lib.PubSubChan)
-	_, err = PubSub.Receive()
-	lib.CheckError(err)
-	log.Printf("Created \"%s\" channel in redis\n", lib.PubSubChan)
 }
 
 func postback(rw http.ResponseWriter, data map[string]string, retCode int) error {
@@ -239,9 +221,12 @@ func handleElse(rw http.ResponseWriter, request *http.Request) {}
 func main() {
 	var wg sync.WaitGroup
 	var ttl int64
+	var redconf string
 
 	flag.BoolVar(&lib.Testnet, "t", false, "Mark all new nodes valid initially")
 	flag.Int64Var(&ttl, "ttl", 0, "Set expiry time in minutes (TTL) for nodes")
+	flag.StringVar(&redconf, "redconf", "/usr/local/share/tor-dam/redis.conf",
+		"Path to redis' redis.conf.")
 	flag.Parse()
 
 	// Chdir to our working directory.
@@ -254,7 +239,7 @@ func main() {
 
 	if _, err := lib.RedisCli.Ping().Result(); err != nil {
 		// We assume redis is not running. Start it up.
-		startRedis()
+		lib.StartRedis(redconf)
 	}
 
 	if lib.Testnet {
