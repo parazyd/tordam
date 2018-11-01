@@ -25,6 +25,16 @@ import (
 	"testing"
 )
 
+func makeReq() map[string]string {
+	return map[string]string{
+		"address":   "gphjf5g3d5ywehwrd7cv3czymtdc6ha67bqplxwbspx7tioxt7gxqiid.onion",
+		"pubkey":    "M86S9NsfcWIe0R/FXYs4ZMYvHB74YPXewZPv+aHXn80=",
+		"message":   "I am a DAM node!",
+		"signature": "CWqptO9ZRIvYMIHd3XHXaVny+W23P8FGkfbn5lvUqeJbDcY3G8+B4G8iCCIQiZkxkMofe6RbstHn3L1x88c3AA==",
+		"secret":    "",
+	}
+}
+
 func TestValidateOnionAddress(t *testing.T) {
 	if !(ValidateOnionAddress("gphjf5g3d5ywehwrd7cv3czymtdc6ha67bqplxwbspx7tioxt7gxqiid.onion")) {
 		t.Fatal("Validating a valid address failed.")
@@ -35,42 +45,30 @@ func TestValidateOnionAddress(t *testing.T) {
 }
 
 func TestValidValidateFirstHandshake(t *testing.T) {
-	req := map[string]string{
-		"address":   "gphjf5g3d5ywehwrd7cv3czymtdc6ha67bqplxwbspx7tioxt7gxqiid.onion",
-		"pubkey":    "M86S9NsfcWIe0R/FXYs4ZMYvHB74YPXewZPv+aHXn80=",
-		"message":   "I am a DAM node!",
-		"signature": "CWqptO9ZRIvYMIHd3XHXaVny+W23P8FGkfbn5lvUqeJbDcY3G8+B4G8iCCIQiZkxkMofe6RbstHn3L1x88c3AA==",
-		"secret":    "",
-	}
-
 	cmd, _ := StartRedis("../../contrib/redis.conf")
-	valid, _ := ValidateFirstHandshake(req)
-	if !(valid) {
+	defer cmd.Process.Kill()
+
+	if valid, _ := ValidateFirstHandshake(makeReq()); !(valid) {
 		t.Fatal("Failed to validate first handshake.")
 	}
-	cmd.Process.Kill()
 }
 
 func TestInvalidValidateFirstHandshake(t *testing.T) {
-	// Invalid message for this signature.
-	req := map[string]string{
-		"address":   "gphjf5g3d5ywehwrd7cv3czymtdc6ha67bqplxwbspx7tioxt7gxqiid.onion",
-		"pubkey":    "M86S9NsfcWIe0R/FXYs4ZMYvHB74YPXewZPv+aHXn80=",
-		"message":   "I am a bad DAM node!",
-		"signature": "CWqptO9ZRIvYMIHd3XHXaVny+W23P8FGkfbn5lvUqeJbDcY3G8+B4G8iCCIQiZkxkMofe6RbstHn3L1x88c3AA==",
-		"secret":    "",
-	}
-
 	cmd, _ := StartRedis("../../contrib/redis.conf")
-	valid, _ := ValidateFirstHandshake(req)
-	if valid {
+	defer cmd.Process.Kill()
+
+	// Invalid message for this signature.
+	req := makeReq()
+	req["message"] = "I am a bad DAM node!"
+
+	if valid, _ := ValidateFirstHandshake(req); valid {
 		t.Fatal("Invalid request passed as valid.")
 	}
-	cmd.Process.Kill()
 }
 
 func TestValidValidateSecondHandshake(t *testing.T) {
 	cmd, _ := StartRedis("../../contrib/redis.conf")
+	defer cmd.Process.Kill()
 
 	pk, sk, _ := GenEd25519()
 	onionaddr := OnionFromPubkeyEd25519(pk)
@@ -100,6 +98,7 @@ func TestValidValidateSecondHandshake(t *testing.T) {
 		t.Fatal(err)
 	}
 	encodedSig = base64.StdEncoding.EncodeToString(sig)
+
 	req = map[string]string{
 		"address":   string(onionaddr),
 		"pubkey":    encodedPub,
@@ -108,15 +107,14 @@ func TestValidValidateSecondHandshake(t *testing.T) {
 		"secret":    secret,
 	}
 
-	valid, _ = ValidateSecondHandshake(req)
-	if !(valid) {
+	if valid, _ = ValidateSecondHandshake(req); !(valid) {
 		t.Fatal("Failed to validate second handshake.")
 	}
-	cmd.Process.Kill()
 }
 
 func TestInValidValidateSecondHandshake(t *testing.T) {
 	cmd, _ := StartRedis("../../contrib/redis.conf")
+	defer cmd.Process.Kill()
 
 	pk, sk, _ := GenEd25519()
 	onionaddr := OnionFromPubkeyEd25519(pk)
@@ -157,9 +155,7 @@ func TestInValidValidateSecondHandshake(t *testing.T) {
 		"secret":    secret,
 	}
 
-	valid, _ = ValidateSecondHandshake(req)
-	if !(valid) {
-		t.Fatal("Failed to validate second handshake.")
+	if valid, _ = ValidateSecondHandshake(req); valid {
+		t.Fatal("Invalid second handshake passed as valid.")
 	}
-	cmd.Process.Kill()
 }
