@@ -262,7 +262,7 @@ func main() {
 	log.Println("Listening on", ListenAddress)
 
 	if ttl > 0 {
-		log.Println("Enabling TTL polling.")
+		log.Printf("Enabling TTL polling (%d minute expire time).\n", ttl)
 		go pollNodeTTL(ttl)
 	}
 
