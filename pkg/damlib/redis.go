@@ -22,6 +22,9 @@ package damlib
 
 import (
 	"fmt"
+	"log"
+	"os/exec"
+	"time"
 
 	"github.com/go-redis/redis"
 )
@@ -35,6 +38,30 @@ var RedisCli = redis.NewClient(&redis.Options{
 	Password: "",
 	DB:       0,
 })
+
+// StartRedis is the function that will start up the Redis server. Takes the
+// path to a configuration file as an argument and returns error upon failure.
+func StartRedis(conf string) (*exec.Cmd, error) {
+	log.Println("Starting up redis-server...")
+	cmd := exec.Command("redis-server", conf)
+	err := cmd.Start()
+	if err != nil {
+		return cmd, err
+	}
+
+	time.Sleep(500 * time.Millisecond)
+	if _, err := RedisCli.Ping().Result(); err != nil {
+		return cmd, err
+	}
+
+	PubSub := RedisCli.Subscribe(PubSubChan)
+	if _, err := PubSub.Receive(); err != nil {
+		return cmd, err
+	}
+
+	log.Printf("Created \"%s\" channel in Redis.\n", PubSubChan)
+	return cmd, nil
+}
 
 // PublishToRedis is a function that publishes a node's status to Redis.
 // This is used for Gource visualization.

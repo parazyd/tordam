@@ -21,8 +21,11 @@ package damlib
  */
 
 import (
+	"crypto"
 	"crypto/rand"
+	"crypto/sha512"
 	"encoding/base32"
+	"encoding/base64"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -34,34 +37,66 @@ import (
 // GenEd25519 generates an ed25519 keypair. Returns error on failure.
 func GenEd25519() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 	log.Println("Generating ed25519 keypair...")
-	rng := rand.Reader
-	pk, sk, err := ed25519.GenerateKey(rng)
+
+	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, nil, err
 	}
 	return pk, sk, nil
 }
 
-// SavePubEd25519 writes a ed25519.PublicKey type to a given string filename.
-// Returns error upon failure.
-func SavePubEd25519(filename string, key ed25519.PublicKey) error {
-	log.Println("Writing ed25519 public key to", filename)
-	const pkprefix = "== ed25519v1-public: type0 =="
-	var pub []byte
-	pub = append(pub, []byte(pkprefix)...)
-	pub = append(pub, []byte(key)...)
-	return ioutil.WriteFile(filename, pub, 0600)
-}
-
 // SavePrivEd25519 writes a ed25519.PrivateKey type to a given string filename.
-// Returns error upon failure.
+// Expands ed25519.PrivateKey to (a || RH) form, writing base64. Returns error
+// upon failure.
 func SavePrivEd25519(filename string, key ed25519.PrivateKey) error {
 	log.Println("Writing ed25519 private key to", filename)
-	const skprefix = "== ed25519v1-secret: type0 =="
-	var sec []byte
-	sec = append(sec, []byte(skprefix)...)
-	sec = append(sec, []byte(key)...)
-	return ioutil.WriteFile(filename, sec, 0600)
+
+	h := sha512.Sum512(key[:32])
+	// Set bits so that h[:32] is a private scalar "a".
+	h[0] &= 248
+	h[31] &= 127
+	h[31] |= 64
+	// Since h[32:] is RH, h is now (a || RH)
+	encoded := base64.StdEncoding.EncodeToString(h[:])
+	return ioutil.WriteFile(filename, []byte(encoded), 0600)
+}
+
+// SaveSeedEd25519 saves the ed25519 private key seed to a given string filename
+// for later reuse. Returns error upon failure.
+func SaveSeedEd25519(filename string, key ed25519.PrivateKey) error {
+	log.Println("Writing ed25519 private key seed to", filename)
+
+	encoded := base64.StdEncoding.EncodeToString(key.Seed())
+	return ioutil.WriteFile(filename, []byte(encoded), 0600)
+}
+
+// LoadEd25519KeyFromSeed loads a key from a given seed file and returns
+// ed25519.PrivateKey. Otherwise, on failure, it returns error.
+func LoadEd25519KeyFromSeed(filename string) (ed25519.PrivateKey, error) {
+	log.Println("Loading ed25519 private key from seed in", filename)
+
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(string(data))
+	if err != nil {
+		return nil, err
+	}
+	return ed25519.NewKeyFromSeed(decoded), nil
+}
+
+// SignMsgEd25519 signs a message using ed25519. Returns the signature in the
+// form of []byte, or returns an error if it fails.
+func SignMsgEd25519(message []byte, key ed25519.PrivateKey) ([]byte, error) {
+	log.Println("Signing message...")
+
+	sig, err := key.Sign(rand.Reader, message, crypto.Hash(0))
+	if err != nil {
+		return nil, err
+	}
+	return sig, nil
 }
 
 // OnionFromPubkeyEd25519 generates a valid onion address from a given ed25519
@@ -83,21 +118,19 @@ func SavePrivEd25519(filename string, key ed25519.PrivateKey) error {
 //			- ".onion checksum" is a constant string
 //			- CHECKSUM is truncated to two bytes before inserting it in onion_address
 func OnionFromPubkeyEd25519(pubkey ed25519.PublicKey) []byte {
-	const hashConst = ".onion checksum"
-	const versConst = '\x03'
+	const salt = ".onion checksum"
+	const version = byte(0x03)
 
-	var h []byte
-	h = append(h, []byte(hashConst)...)
-	h = append(h, []byte(pubkey)...)
-	h = append(h, byte(versConst))
+	h := []byte(salt)
+	h = append(h, pubkey...)
+	h = append(h, version)
 
 	csum := sha3.Sum256(h)
 	checksum := csum[:2]
 
-	var enc []byte
-	enc = append(enc, []byte(pubkey)...)
+	enc := pubkey[:]
 	enc = append(enc, checksum...)
-	enc = append(enc, byte(versConst))
+	enc = append(enc, version)
 
 	encoded := base32.StdEncoding.EncodeToString(enc)
 	return []byte(strings.ToLower(encoded) + ".onion")

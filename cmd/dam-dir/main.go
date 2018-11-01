@@ -26,7 +26,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"sync"
 	"time"
@@ -38,7 +37,6 @@ import (
 const ListenAddress = "127.0.0.1:49371"
 
 type nodeStruct struct {
-	Nodetype  string
 	Address   string
 	Message   string
 	Signature string
@@ -47,23 +45,6 @@ type nodeStruct struct {
 	Firstseen int64
 	Lastseen  int64
 	Valid     int64
-}
-
-func startRedis() {
-	log.Println("Starting up redis-server...")
-	cmd := exec.Command("redis-server", "/usr/local/share/tor-dam/redis.conf")
-	err := cmd.Start()
-	lib.CheckError(err)
-
-	time.Sleep(500 * time.Millisecond)
-
-	_, err = lib.RedisCli.Ping().Result()
-	lib.CheckError(err)
-
-	PubSub := lib.RedisCli.Subscribe(lib.PubSubChan)
-	_, err = PubSub.Receive()
-	lib.CheckError(err)
-	log.Printf("Created \"%s\" channel in redis\n", lib.PubSubChan)
 }
 
 func postback(rw http.ResponseWriter, data map[string]string, retCode int) error {
@@ -96,8 +77,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	}
 
 	// Bail out as soon as possible.
-	if len(n.Nodetype) == 0 || len(n.Address) == 0 ||
-		len(n.Message) == 0 || len(n.Signature) == 0 {
+	if len(n.Address) == 0 || len(n.Message) == 0 || len(n.Signature) == 0 {
 		ret = map[string]string{"secret": "Invalid request format."}
 		if err := postback(rw, ret, 400); err != nil {
 			lib.CheckError(err)
@@ -114,9 +94,9 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 	}
 
 	req := map[string]string{
-		"nodetype":  n.Nodetype,
 		"address":   n.Address,
 		"message":   n.Message,
+		"pubkey":    n.Pubkey,
 		"signature": n.Signature,
 		"secret":    n.Secret,
 	}
@@ -127,7 +107,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		ret = map[string]string{"secret": msg}
 		if valid {
 			log.Printf("%s: 1/2 handshake valid.\n", n.Address)
-			log.Println("Sending back encrypted secret.")
+			log.Println("Sending nonce.")
 			if err := postback(rw, ret, 200); err != nil {
 				lib.CheckError(err)
 			}
@@ -240,28 +220,31 @@ func handleElse(rw http.ResponseWriter, request *http.Request) {}
 
 func main() {
 	var wg sync.WaitGroup
-	var t bool
 	var ttl int64
+	var redconf string
 
-	flag.BoolVar(&t, "t", false, "Mark all new nodes valid initially")
+	flag.BoolVar(&lib.Testnet, "t", false, "Mark all new nodes valid initially")
 	flag.Int64Var(&ttl, "ttl", 0, "Set expiry time in minutes (TTL) for nodes")
+	flag.StringVar(&redconf, "redconf", "/usr/local/share/tor-dam/redis.conf",
+		"Path to redis' redis.conf.")
 	flag.Parse()
 
-	if t {
-		lib.Testnet = true
-	}
-
 	// Chdir to our working directory.
-	if _, err := os.Stat(lib.Cwd); os.IsNotExist(err) {
-		err := os.Mkdir(lib.Cwd, 0700)
+	if _, err := os.Stat(lib.Workdir); os.IsNotExist(err) {
+		err := os.Mkdir(lib.Workdir, 0700)
 		lib.CheckError(err)
 	}
-	err := os.Chdir(lib.Cwd)
+	err := os.Chdir(lib.Workdir)
 	lib.CheckError(err)
 
 	if _, err := lib.RedisCli.Ping().Result(); err != nil {
 		// We assume redis is not running. Start it up.
-		startRedis()
+		_, err := lib.StartRedis(redconf)
+		lib.CheckError(err)
+	}
+
+	if lib.Testnet {
+		log.Println("Will mark all nodes valid by default.")
 	}
 
 	mux := http.NewServeMux()

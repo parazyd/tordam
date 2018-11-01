@@ -25,7 +25,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/rand"
-	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
 	"flag"
@@ -39,42 +38,118 @@ import (
 	"time"
 
 	lib "github.com/parazyd/tor-dam/pkg/damlib"
+	"golang.org/x/crypto/ed25519"
 )
 
 type msgStruct struct {
 	Secret string
 }
 
-func clientInit(gen bool) {
-	err := os.Chmod(lib.PrivKeyPath, 0600)
-	lib.CheckError(err)
-
-	key, err := lib.GenRsa(lib.RsaBits)
-	lib.CheckError(err)
-
-	err = lib.SavePrivRsa(lib.PrivKeyPath, key)
-	lib.CheckError(err)
-
-	onionaddr, err := lib.OnionFromPubkeyRsa(key.PublicKey)
-	lib.CheckError(err)
-
-	err = ioutil.WriteFile("hostname", onionaddr, 0644)
-	lib.CheckError(err)
-
-	log.Printf("Our hostname is: %s\n", string(onionaddr))
+func clientInit(gen bool) error {
+	pub, priv, err := lib.GenEd25519()
+	if err != nil {
+		return err
+	}
+	if err := lib.SavePrivEd25519(lib.PrivKeyPath, priv); err != nil {
+		return err
+	}
+	if err := lib.SaveSeedEd25519(lib.SeedPath, priv.Seed()); err != nil {
+		return err
+	}
+	if err := os.Chmod(lib.PrivKeyPath, 0600); err != nil {
+		return err
+	}
+	if err := os.Chmod(lib.SeedPath, 0600); err != nil {
+		return err
+	}
+	onionaddr := lib.OnionFromPubkeyEd25519(pub)
+	if err := ioutil.WriteFile("hostname", onionaddr, 0600); err != nil {
+		return err
+	}
 	if gen {
+		log.Println("Our hostname is:", string(onionaddr))
 		os.Exit(0)
 	}
+	return nil
 }
 
-func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool, error) {
+func fetchNodeList(epLists []string, noremote bool) ([]string, error) {
+	var nodeslice, nodelist []string
+
+	log.Println("Fetching a list of nodes.")
+
+	// Remote network entrypoints
+	if !(noremote) {
+		for _, i := range epLists {
+			log.Println("Fetching", i)
+			n, err := lib.HTTPDownload(i)
+			if err != nil {
+				return nil, err
+			}
+			nodeslice = lib.ParseDirs(nodeslice, n)
+		}
+	}
+
+	// Local ~/.dam/directories.txt
+	if _, err := os.Stat("directories.txt"); err == nil {
+		ln, err := ioutil.ReadFile("directories.txt")
+		if err != nil {
+			return nil, err
+		}
+		nodeslice = lib.ParseDirs(nodeslice, ln)
+	}
+
+	// Local nodes known to Redis
+	nodes, _ := lib.RedisCli.Keys(".onion").Result()
+	for _, i := range nodes {
+		valid, err := lib.RedisCli.HGet(i, "valid").Result()
+		if err != nil {
+			// Possible RedisCli bug, possible Redis bug. To be investigated.
+			// Sometimes it returns err, but it's nil and does not say what's
+			// happening exactly.
+			continue
+		}
+		if valid == "1" {
+			nodeslice = append(nodeslice, i)
+		}
+	}
+
+	// Remove possible duplicates. Duplicates can cause race conditions and are
+	// redundant to the entire logic.
+	encounter := map[string]bool{}
+	for i := range nodeslice {
+		encounter[nodeslice[i]] = true
+	}
+	nodeslice = []string{}
+	for key := range encounter {
+		nodeslice = append(nodeslice, key)
+	}
+
+	if len(nodeslice) < 1 {
+		log.Fatalln("Couldn't fetch any nodes to announce to. Exiting.")
+	} else if len(nodeslice) <= 6 {
+		log.Printf("Found only %d nodes.\n", len(nodeslice))
+		nodelist = nodeslice
+	} else {
+		log.Println("Found enough directories. Picking out 6 random ones.")
+		for i := 0; i <= 5; i++ {
+			n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(nodeslice))))
+			nodelist = append(nodelist, nodeslice[n.Int64()])
+			nodeslice[n.Int64()] = nodeslice[len(nodeslice)-1]
+			nodeslice = nodeslice[:len(nodeslice)-1]
+		}
+	}
+	return nodelist, nil
+}
+
+func announce(node string, vals map[string]string, privkey ed25519.PrivateKey) (bool, error) {
 	msg, err := json.Marshal(vals)
 	if err != nil {
 		return false, err
 	}
 
-	log.Println("Announcing keypair to:", dir)
-	resp, err := lib.HTTPPost("http://"+dir+"/announce", msg)
+	log.Println("Announcing keypair to:", node)
+	resp, err := lib.HTTPPost("http://"+node+"/announce", msg)
 	if err != nil {
 		return false, err
 	}
@@ -82,59 +157,49 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 	// Parse server's reply
 	var m msgStruct
 	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&m)
-	if err != nil {
+	if err := decoder.Decode(&m); err != nil {
 		return false, err
 	}
 
 	if resp.StatusCode == 400 {
-		log.Printf("%s: Fail. Reply: %s\n", dir, m.Secret)
+		log.Printf("%s fail. Reply: %s\n", node, m.Secret)
 		return false, nil
 	}
 
 	if resp.StatusCode == 200 {
-		log.Printf("%s: Success. 1/2 handshake valid.\n", dir)
-		decodedSecret, err := base64.StdEncoding.DecodeString(m.Secret)
+		log.Printf("%s success. 1/2 handshake valid.", node)
+
+		sig, err := lib.SignMsgEd25519([]byte(m.Secret), privkey)
 		if err != nil {
 			return false, err
 		}
-
-		decrypted, err := lib.DecryptMsgRsa(decodedSecret, privkey)
-		if err != nil {
-			return false, err
-		}
-
-		decryptedEncode := base64.StdEncoding.EncodeToString(decrypted)
-
-		sig, err := lib.SignMsgRsa([]byte(decryptedEncode), privkey)
-		lib.CheckError(err)
 		encodedSig := base64.StdEncoding.EncodeToString(sig)
 
-		vals["secret"] = decryptedEncode
-		vals["message"] = decryptedEncode
+		vals["secret"] = m.Secret
+		vals["message"] = m.Secret
 		vals["signature"] = encodedSig
+
 		msg, err := json.Marshal(vals)
 		if err != nil {
 			return false, err
 		}
 
-		log.Printf("%s: Success. Sending back decrypted secret\n", dir)
-		resp, err := lib.HTTPPost("http://"+dir+"/announce", msg)
+		log.Printf("%s: success. Sending back signed secret.\n", node)
+		resp, err := lib.HTTPPost("http://"+node+"/announce", msg)
 		if err != nil {
 			return false, err
 		}
 		decoder = json.NewDecoder(resp.Body)
-		if err = decoder.Decode(&m); err != nil {
+		if err := decoder.Decode(&m); err != nil {
 			return false, err
 		}
 
 		if resp.StatusCode == 200 {
-			log.Printf("%s: Success. 2/2 handshake valid.\n", dir)
-			// TODO: To TOFU or not to TOFU?
+			log.Printf("%s success. 2/2 handshake valid.\n", node)
 			data, err := base64.StdEncoding.DecodeString(m.Secret)
 			if err != nil {
 				// Not a list of nodes.
-				log.Printf("%s: Reply: %s\n", dir, m.Secret)
+				log.Printf("%s replied: %s\n", node, m.Secret)
 				return true, nil
 			}
 			log.Println("Got node data. Processing...")
@@ -146,7 +211,7 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 				return false, err
 			}
 			for k, v := range nodes {
-				log.Printf("Adding %s to redis\n", k)
+				log.Printf("Adding %s to Redis.\n", k)
 				redRet, err := lib.RedisCli.HMSet(k, v).Result()
 				lib.CheckError(err)
 				if redRet != "OK" {
@@ -155,115 +220,43 @@ func announce(dir string, vals map[string]string, privkey *rsa.PrivateKey) (bool
 			}
 			return true, nil
 		}
-		log.Printf("%s: Fail. Reply: %s\n", dir, m.Secret)
+		log.Printf("%s fail. Reply: %s\n", node, m.Secret)
 		return false, nil
 	}
 
 	return false, nil
 }
 
-func fetchDirlist(locations []string) ([]string, error) {
-	var dirSlice, dirlist []string
-	log.Println("Grabbing a list of directories.")
-
-	// Remote network entry points
-	if !(lib.Noremote) {
-		for _, i := range locations {
-			log.Println("Fetching", i)
-			dirs, err := lib.HTTPDownload(i)
-			if err != nil {
-				return nil, err
-			}
-			dirSlice = lib.ParseDirs(dirSlice, dirs)
-		}
-	}
-
-	// Local ~/.dam/directories.txt
-	if _, err := os.Stat("directories.txt"); err == nil {
-		dirs, err := ioutil.ReadFile("directories.txt")
-		lib.CheckError(err)
-		dirSlice = lib.ParseDirs(dirSlice, dirs)
-	}
-
-	// Local nodes known to redis
-	nodes, err := lib.RedisCli.Keys("*.onion").Result()
-	lib.CheckError(err)
-	for _, i := range nodes {
-		valid, err := lib.RedisCli.HGet(i, "valid").Result()
-		if err != nil {
-			// Possible RedisCli bug, possible Redis bug. To be investigated.
-			// Sometimes it returns err, but it's nil and does not say what's
-			// happening exactly.
-			continue
-		}
-		if valid == "1" {
-			dirSlice = append(dirSlice, i)
-		}
-	}
-
-	// Remove possible duplicats. Dupes can cause race conditions and are
-	// redundant to the whole logic.
-	encounter := map[string]bool{}
-	for j := range dirSlice {
-		encounter[dirSlice[j]] = true
-	}
-	dirSlice = []string{}
-	for key := range encounter {
-		dirSlice = append(dirSlice, key)
-	}
-
-	if len(dirSlice) < 1 {
-		log.Fatalln("Couldn't get any directories. Exiting.")
-	} else if len(dirSlice) <= 6 {
-		log.Printf("Found only %d directories.\n", len(dirSlice))
-		dirlist = dirSlice
-	} else {
-		log.Println("Found enough directories. Picking out 6 random ones.")
-		// Pick out 6 random directories from the retrieved list.
-		for k := 0; k <= 5; k++ {
-			n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(dirSlice))))
-			dirlist = append(dirlist, dirSlice[n.Int64()])
-			dirSlice[n.Int64()] = dirSlice[len(dirSlice)-1]
-			dirSlice = dirSlice[:len(dirSlice)-1]
-		}
-	}
-	return dirlist, nil
-}
-
 func main() {
-	var d, gen bool
+	var noremote, gen bool
 	var ai int
 	var dh string
-	var dirHosts []string
 
-	flag.BoolVar(&d, "d", false, "Don't fetch remote entry points.")
+	flag.BoolVar(&noremote, "d", false, "Don't fetch remote entrypoints.")
 	flag.BoolVar(&gen, "gen", false, "Only (re)generate keypairs and exit cleanly.")
 	flag.IntVar(&ai, "ai", 5, "Announce interval in minutes.")
 	flag.StringVar(&dh, "dh", "https://dam.decodeproject.eu/dirs.txt",
-		"A remote list of entry points/directories. (comma-separated)")
+		"Remote lists of entrypoints. (comma-separated)")
 	flag.Parse()
 
-	if d {
-		lib.Noremote = true
-	}
+	// Network entrypoints. These files hold the lists of nodes we can announce
+	// to initially. Format is "DIR:unlikelynamefora.onion", other lines are
+	// ignored and can be used as comments or similar.
+	epLists := strings.Split(dh, ",")
 
-	// Network entry points. These files hold the lists of directories we can
-	// announce to. Format is "DIR:22mobp7vrb7a4gt2.onion", other lines are ignored.
-	dirHosts = strings.Split(dh, ",")
-
-	if _, err := os.Stat(lib.Cwd); os.IsNotExist(err) {
-		err := os.Mkdir(lib.Cwd, 0700)
+	if _, err := os.Stat(lib.Workdir); os.IsNotExist(err) {
+		err := os.Mkdir(lib.Workdir, 0700)
 		lib.CheckError(err)
 	}
-	err := os.Chdir(lib.Cwd)
+	err := os.Chdir(lib.Workdir)
 	lib.CheckError(err)
 
 	if _, err = os.Stat(lib.PrivKeyPath); os.IsNotExist(err) || gen {
-		clientInit(gen)
+		err = clientInit(gen)
+		lib.CheckError(err)
 	}
 
-	// Start up the hidden service
-	log.Println("Starting up the hidden service...")
+	log.Println("Starting up the hidden service.")
 	cmd := exec.Command("damhs.py", lib.PrivKeyPath, lib.TorPortMap)
 	stdout, err := cmd.StdoutPipe()
 	lib.CheckError(err)
@@ -274,14 +267,14 @@ func main() {
 	scanner := bufio.NewScanner(stdout)
 	ok := false
 	go func() {
-		// If we do not manage to publish our descriptor, we will exit.
+		// If we do not manage to publish our descriptor, we shall exit.
 		t1 := time.Now().Unix()
 		for !(ok) {
 			t2 := time.Now().Unix()
 			if t2-t1 > 90 {
 				err := cmd.Process.Kill()
 				lib.CheckError(err)
-				log.Fatalln("Too much time passed. Exiting.")
+				log.Fatalln("Too much time has passed for publishing descriptor.")
 			}
 			time.Sleep(1000 * time.Millisecond)
 		}
@@ -290,44 +283,50 @@ func main() {
 		scanner.Scan()
 		status := scanner.Text()
 		if status == "OK" {
-			log.Println("Hidden service is now running")
+			log.Println("Hidden service is now running.")
 			ok = true
 		}
 	}
 
+	onionaddr, err := ioutil.ReadFile("hostname")
+	lib.CheckError(err)
+	log.Println("Our hostname is:", string(onionaddr))
+
 	for {
-		key, err := lib.LoadRsaKeyFromFile(lib.PrivKeyPath)
+		log.Println("Announcing to nodes...")
+		var ann = 0 // Track of successful authentications.
+		var wg sync.WaitGroup
+		nodes, err := fetchNodeList(epLists, noremote)
+		if err != nil {
+			// No route to host, or failed download. Try later.
+			log.Println("Failed to fetch any nodes. Retrying in a minute.")
+			time.Sleep(60 * time.Second)
+			continue
+		}
+
+		privkey, err := lib.LoadEd25519KeyFromSeed(lib.SeedPath)
 		lib.CheckError(err)
 
-		sig, err := lib.SignMsgRsa([]byte(lib.PostMsg), key)
+		pubkey := privkey.Public().(ed25519.PublicKey)
+		onionaddr := lib.OnionFromPubkeyEd25519(pubkey)
+		encodedPub := base64.StdEncoding.EncodeToString([]byte(pubkey))
+
+		sig, err := lib.SignMsgEd25519([]byte(lib.PostMsg), privkey)
 		lib.CheckError(err)
 		encodedSig := base64.StdEncoding.EncodeToString(sig)
 
-		onionAddr, err := lib.OnionFromPubkeyRsa(key.PublicKey)
-		lib.CheckError(err)
-
 		nodevals := map[string]string{
-			"nodetype":  "node",
-			"address":   string(onionAddr),
+			"address":   string(onionaddr),
+			"pubkey":    encodedPub,
 			"message":   lib.PostMsg,
 			"signature": encodedSig,
 			"secret":    "",
 		}
 
-		log.Println("Announcing to directories...")
-		var ann = 0 // Track of how many successful authentications
-		var wg sync.WaitGroup
-		dirlist, err := fetchDirlist(dirHosts)
-		if err != nil {
-			// No route to host, or failed dl. Try later.
-			log.Println("Failed to fetch directory list. Retrying in a minute.")
-			time.Sleep(60 * time.Second)
-			continue
-		}
-		for _, i := range dirlist {
+		for _, i := range nodes {
 			wg.Add(1)
 			go func(x string) {
-				valid, err := announce(x, nodevals, key)
+				valid, err := announce(x, nodevals, privkey)
 				if err != nil {
 					log.Printf("%s: %s\n", x, err.Error())
 				}
@@ -339,15 +338,8 @@ func main() {
 		}
 		wg.Wait()
 
-		if ann < 1 {
-			log.Println("No successful authentications.")
-		} else {
-			log.Printf("Successfully authenticated with %d nodes.\n", ann)
-		}
-		log.Printf("Waiting %d min. before next announce.\n", ai)
+		log.Printf("%d successful authentications.\n", ann)
+		log.Printf("Waiting %d min before next announce.\n", ai)
 		time.Sleep(time.Duration(ai) * time.Minute)
 	}
-
-	//err = cmd.Wait() // Hidden service Python daemon
-	//lib.CheckError(err)
 }
