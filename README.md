@@ -6,6 +6,8 @@ this software.
 
 [![GoDoc](https://godoc.org/github.com/parazyd/tor-dam?status.svg)](https://godoc.org/github.com/parazyd/tor-dam)
 
+![Network visualization](https://raw.githubusercontent.com/parazyd/tor-dam/master/contrib/network.gif)
+
 Installation
 ------------
 
