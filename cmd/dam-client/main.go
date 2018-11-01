@@ -143,10 +143,7 @@ func fetchNodeList(epLists []string, noremote bool) ([]string, error) {
 }
 
 func announce(node string, vals map[string]string, privkey ed25519.PrivateKey) (bool, error) {
-	msg, err := json.Marshal(vals)
-	if err != nil {
-		return false, err
-	}
+	msg, _ := json.Marshal(vals)
 
 	log.Println("Announcing keypair to:", node)
 	resp, err := lib.HTTPPost("http://"+node+"/announce", msg)
@@ -179,10 +176,7 @@ func announce(node string, vals map[string]string, privkey ed25519.PrivateKey) (
 		vals["message"] = m.Secret
 		vals["signature"] = encodedSig
 
-		msg, err := json.Marshal(vals)
-		if err != nil {
-			return false, err
-		}
+		msg, _ := json.Marshal(vals)
 
 		log.Printf("%s: success. Sending back signed secret.\n", node)
 		resp, err := lib.HTTPPost("http://"+node+"/announce", msg)
