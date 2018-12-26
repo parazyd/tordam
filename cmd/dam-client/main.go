@@ -37,8 +37,9 @@ import (
 	"sync"
 	"time"
 
-	lib "github.com/parazyd/tor-dam/pkg/damlib"
 	"golang.org/x/crypto/ed25519"
+
+	lib "github.com/parazyd/tor-dam/pkg/damlib"
 )
 
 type msgStruct struct {
@@ -251,7 +252,7 @@ func main() {
 	}
 
 	log.Println("Starting up the hidden service.")
-	cmd := exec.Command("damhs.py", lib.PrivKeyPath, lib.TorPortMap)
+	cmd := exec.Command("damhs.py", "-k", lib.PrivKeyPath, "-p", lib.TorPortMap)
 	defer cmd.Process.Kill()
 	stdout, err := cmd.StdoutPipe()
 	lib.CheckError(err)

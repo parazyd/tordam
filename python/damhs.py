@@ -26,8 +26,10 @@ Usage: damhs.py <path_to_private.key> <portmap>
 following element: 80:49371 (80 is the remote, 49371 is local)
 """
 
-from sys import argv, stdout
+from argparse import ArgumentParser
+from sys import stdout
 from time import sleep
+
 from stem.control import Controller
 
 
@@ -44,16 +46,25 @@ def main():
     """
     Main loop
     """
+    parser = ArgumentParser()
+    parser.add_argument('-k', '--private-key',
+                        help='Path to the ed25519 private key',
+                        default='/home/decode/.dam/private.key')
+    parser.add_argument('-p', '--port-map', action='store_true',
+                        help='Comma-separated string of local:remote ports',
+                        default='80:49731,5000:5000')
+    args = parser.parse_args()
+
     ctl = Controller.from_port()
     ctl.authenticate(password='topkek')
 
     portmap = {}
-    ports = argv[2].split(',')
+    ports = args.port_map.split(',')
     for i in ports:
         tup = i.split(':')
         portmap[int(tup[0])] = int(tup[1])
 
-    keyfile = argv[1]
+    keyfile = args.private_key
     ktype = 'ED25519-V3'
     kcont = open(keyfile).read()
 
@@ -63,7 +74,7 @@ def main():
     stdout.write('OK\n')
     stdout.flush()
     while True:
-            sleep(60)
+        sleep(60)
 
 
 if __name__ == '__main__':
