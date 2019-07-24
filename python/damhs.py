@@ -50,7 +50,7 @@ def main():
     parser.add_argument('-k', '--private-key',
                         help='Path to the ed25519 private key',
                         default='/home/decode/.dam/private.key')
-    parser.add_argument('-p', '--port-map', action='store_true',
+    parser.add_argument('-p', '--port-map',
                         help='Comma-separated string of local:remote ports',
                         default='80:49731,5000:5000')
     args = parser.parse_args()
