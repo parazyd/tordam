@@ -51,6 +51,7 @@ var (
 	gen         = flag.Bool("gen", false, "Only (re)generate keypairs and exit cleanly.")
 	annint      = flag.Int("ai", 5, "Announce interval (in minutes)")
 	remoteentry = flag.String("remoteentry", "https://dam.decodeproject.eu/dirs.txt", "Remote list of entrypoints. (comma-separated)")
+	portmap     = flag.String("portmap", "13010:13010,13011:13011,5000:5000", "Map of ports forwarded to/from Tor.")
 )
 
 func clientInit(gen bool) error {
@@ -248,6 +249,9 @@ func main() {
 		err = clientInit(*gen)
 		lib.CheckError(err)
 	}
+
+	// Map it to the flag
+	lib.TorPortMap = "80:49371," + *portmap
 
 	log.Println("Starting up the hidden service.")
 	cmd := exec.Command("damhs.py", "-k", lib.PrivKeyPath, "-p", lib.TorPortMap)
