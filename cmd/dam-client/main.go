@@ -46,6 +46,13 @@ type msgStruct struct {
 	Secret string
 }
 
+var (
+	noremote    = flag.Bool("noremote", false, "Don't fetch remote entrypoints.")
+	gen         = flag.Bool("gen", false, "Only (re)generate keypairs and exit cleanly.")
+	annint      = flag.Int("ai", 5, "Announce interval (in minutes)")
+	remoteentry = flag.String("remoteentry", "https://dam.decodeproject.eu/dirs.txt", "Remote list of entrypoints. (comma-separated)")
+)
+
 func clientInit(gen bool) error {
 	pub, priv, err := lib.GenEd25519()
 	if err != nil {
@@ -74,13 +81,13 @@ func clientInit(gen bool) error {
 	return nil
 }
 
-func fetchNodeList(epLists []string, noremote bool) ([]string, error) {
+func fetchNodeList(epLists []string, remote bool) ([]string, error) {
 	var nodeslice, nodelist []string
 
 	log.Println("Fetching a list of nodes.")
 
 	// Remote network entrypoints
-	if !(noremote) {
+	if !(remote) {
 		for _, i := range epLists {
 			log.Println("Fetching", i)
 			n, err := lib.HTTPDownload(i)
@@ -223,21 +230,12 @@ func announce(node string, vals map[string]string, privkey ed25519.PrivateKey) (
 }
 
 func main() {
-	var noremote, gen bool
-	var ai int
-	var dh string
-
-	flag.BoolVar(&noremote, "d", false, "Don't fetch remote entrypoints.")
-	flag.BoolVar(&gen, "gen", false, "Only (re)generate keypairs and exit cleanly.")
-	flag.IntVar(&ai, "ai", 5, "Announce interval in minutes.")
-	flag.StringVar(&dh, "dh", "https://dam.decodeproject.eu/dirs.txt",
-		"Remote lists of entrypoints. (comma-separated)")
 	flag.Parse()
 
 	// Network entrypoints. These files hold the lists of nodes we can announce
 	// to initially. Format is "DIR:unlikelynamefora.onion", other lines are
 	// ignored and can be used as comments or similar.
-	epLists := strings.Split(dh, ",")
+	epLists := strings.Split(*remoteentry, ",")
 
 	if _, err := os.Stat(lib.Workdir); os.IsNotExist(err) {
 		err := os.Mkdir(lib.Workdir, 0700)
@@ -246,8 +244,8 @@ func main() {
 	err := os.Chdir(lib.Workdir)
 	lib.CheckError(err)
 
-	if _, err = os.Stat(lib.PrivKeyPath); os.IsNotExist(err) || gen {
-		err = clientInit(gen)
+	if _, err = os.Stat(lib.PrivKeyPath); os.IsNotExist(err) || *gen {
+		err = clientInit(*gen)
 		lib.CheckError(err)
 	}
 
@@ -290,7 +288,7 @@ func main() {
 		log.Println("Announcing to nodes...")
 		var ann = 0 // Track of successful authentications.
 		var wg sync.WaitGroup
-		nodes, err := fetchNodeList(epLists, noremote)
+		nodes, err := fetchNodeList(epLists, *noremote)
 		if err != nil {
 			// No route to host, or failed download. Try later.
 			log.Println("Failed to fetch any nodes. Retrying in a minute.")
@@ -333,7 +331,7 @@ func main() {
 		wg.Wait()
 
 		log.Printf("%d successful authentications.\n", ann)
-		log.Printf("Waiting %d min before next announce.\n", ai)
-		time.Sleep(time.Duration(ai) * time.Minute)
+		log.Printf("Waiting %d min before next announce.\n", *annint)
+		time.Sleep(time.Duration(*annint) * time.Minute)
 	}
 }

@@ -47,6 +47,12 @@ type nodeStruct struct {
 	Valid     int64
 }
 
+var (
+	testnet = flag.Bool("t", false, "Mark all new nodes valid initially.")
+	ttl     = flag.Int64("ttl", 0, "Set expiry time in minutes (TTL) for nodes.")
+	redconf = flag.String("redconf", "/usr/local/share/tor-dam/redis.conf", "Path to redis' redis.conf.")
+)
+
 func postback(rw http.ResponseWriter, data map[string]string, retCode int) error {
 	jsonVal, err := json.Marshal(data)
 	if err != nil {
@@ -219,15 +225,12 @@ func pollNodeTTL(interval int64) {
 func handleElse(rw http.ResponseWriter, request *http.Request) {}
 
 func main() {
-	var wg sync.WaitGroup
-	var ttl int64
-	var redconf string
-
-	flag.BoolVar(&lib.Testnet, "t", false, "Mark all new nodes valid initially")
-	flag.Int64Var(&ttl, "ttl", 0, "Set expiry time in minutes (TTL) for nodes")
-	flag.StringVar(&redconf, "redconf", "/usr/local/share/tor-dam/redis.conf",
-		"Path to redis' redis.conf.")
 	flag.Parse()
+	var wg sync.WaitGroup
+	if *testnet {
+		log.Println("Enabling testnet")
+		lib.Testnet = true
+	}
 
 	// Chdir to our working directory.
 	if _, err := os.Stat(lib.Workdir); os.IsNotExist(err) {
@@ -239,7 +242,7 @@ func main() {
 
 	if _, err := lib.RedisCli.Ping().Result(); err != nil {
 		// We assume redis is not running. Start it up.
-		cmd, err := lib.StartRedis(redconf)
+		cmd, err := lib.StartRedis(*redconf)
 		defer cmd.Process.Kill()
 		lib.CheckError(err)
 	}
@@ -261,9 +264,9 @@ func main() {
 	go srv.ListenAndServe()
 	log.Println("Listening on", ListenAddress)
 
-	if ttl > 0 {
-		log.Printf("Enabling TTL polling (%d minute expire time).\n", ttl)
-		go pollNodeTTL(ttl)
+	if *ttl > 0 {
+		log.Printf("Enabling TTL polling (%d minute expire time).\n", *ttl)
+		go pollNodeTTL(*ttl)
 	}
 
 	wg.Wait()
