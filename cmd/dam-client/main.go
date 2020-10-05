@@ -109,9 +109,9 @@ func fetchNodeList(epLists []string, remote bool) ([]string, error) {
 	}
 
 	// Local nodes known to Redis
-	nodes, _ := lib.RedisCli.Keys("*.onion").Result()
+	nodes, _ := lib.RedisCli.Keys(lib.Rctx, "*.onion").Result()
 	for _, i := range nodes {
-		valid, err := lib.RedisCli.HGet(i, "valid").Result()
+		valid, err := lib.RedisCli.HGet(lib.Rctx, i, "valid").Result()
 		if err != nil {
 			// Possible RedisCli bug, possible Redis bug. To be investigated.
 			// Sometimes it returns err, but it's nil and does not say what's
@@ -215,11 +215,8 @@ func announce(node string, vals map[string]string, privkey ed25519.PrivateKey) (
 			}
 			for k, v := range nodes {
 				log.Printf("Adding %s to Redis.\n", k)
-				redRet, err := lib.RedisCli.HMSet(k, v).Result()
+				_, err = lib.RedisCli.HMSet(lib.Rctx, k, v).Result()
 				lib.CheckError(err)
-				if redRet != "OK" {
-					log.Println("Redis returned:", redRet)
-				}
 			}
 			return true, nil
 		}

@@ -79,12 +79,12 @@ func ValidateFirstHandshake(req map[string]string) (bool, string) {
 	var pubstr string
 	var pubkey ed25519.PublicKey
 	// Check if we have seen this node already.
-	ex, err := RedisCli.Exists(req["address"]).Result()
+	ex, err := RedisCli.Exists(Rctx, req["address"]).Result()
 	CheckError(err)
 	if ex == 1 {
 		// We saw it so we should have the public key in redis.
 		// If we do not, that is an internal error.
-		pubstr, err = RedisCli.HGet(req["address"], "pubkey").Result()
+		pubstr, err = RedisCli.HGet(Rctx, req["address"], "pubkey").Result()
 		CheckError(err)
 	} else {
 		// We take it from the announce.
@@ -128,12 +128,8 @@ func ValidateFirstHandshake(req map[string]string) (bool, string) {
 	}
 
 	log.Printf("%s: writing to redis\n", req["address"])
-	redRet, err := RedisCli.HMSet(req["address"], info).Result()
+	_, err = RedisCli.HMSet(Rctx, req["address"], info).Result()
 	CheckError(err)
-
-	if redRet != "OK" {
-		return false, "Internal server error"
-	}
 
 	return true, encodedSecret
 }
@@ -160,19 +156,19 @@ func ValidateSecondHandshake(req map[string]string) (bool, string) {
 	var pubstr string
 	var pubkey ed25519.PublicKey
 	// Check if we have seen this node already.
-	ex, err := RedisCli.Exists(req["address"]).Result()
+	ex, err := RedisCli.Exists(Rctx, req["address"]).Result()
 	CheckError(err)
 	if ex == 1 {
 		// We saw it so we should have the public key in redis.
 		// If we do not, that is an internal error.
-		pubstr, err = RedisCli.HGet(req["address"], "pubkey").Result()
+		pubstr, err = RedisCli.HGet(Rctx, req["address"], "pubkey").Result()
 		CheckError(err)
 	} else {
 		log.Printf("%s tried to jump in 2/2 handshake before doing the first.\n", req["address"])
 		return false, "We have not seen you before. Please authenticate properly."
 	}
 
-	localSec, err := RedisCli.HGet(req["address"], "secret").Result()
+	localSec, err := RedisCli.HGet(Rctx, req["address"], "secret").Result()
 	CheckError(err)
 
 	if !(localSec == req["secret"] && localSec == req["message"]) {
@@ -208,12 +204,8 @@ func ValidateSecondHandshake(req map[string]string) (bool, string) {
 	} // Can not cast, need this for HMSet
 
 	log.Printf("%s: writing to redis\n", req["address"])
-	redRet, err := RedisCli.HMSet(req["address"], info).Result()
+	_, err = RedisCli.HMSet(Rctx, req["address"], info).Result()
 	CheckError(err)
-
-	if redRet != "OK" {
-		return false, "Internal server error"
-	}
 
 	return true, WelcomeMsg
 }

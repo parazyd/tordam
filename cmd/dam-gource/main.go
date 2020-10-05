@@ -28,8 +28,8 @@ import (
 )
 
 func main() {
-	pubsub := lib.RedisCli.Subscribe(lib.PubSubChan)
-	_, err := pubsub.Receive()
+	pubsub := lib.RedisCli.Subscribe(lib.Rctx, lib.PubSubChan)
+	_, err := pubsub.Receive(lib.Rctx)
 	lib.CheckError(err)
 	fmt.Fprintf(os.Stderr, "Subscribed to %s channel in Redis\n", lib.PubSubChan)
 

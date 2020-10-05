@@ -121,7 +121,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		}
 		log.Printf("%s: 1/2 handshake invalid: %s\n", n.Address, msg)
 		// Delete it all from redis.
-		_, err := lib.RedisCli.Del(n.Address).Result()
+		_, err := lib.RedisCli.Del(lib.Rctx, n.Address).Result()
 		lib.CheckError(err)
 		if err := postback(rw, ret, 400); err != nil {
 			lib.CheckError(err)
@@ -136,7 +136,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 
 		if valid {
 			log.Printf("%s: 2/2 handshake valid.\n", n.Address)
-			hasConsensus, err := lib.RedisCli.HGet(n.Address, "valid").Result()
+			hasConsensus, err := lib.RedisCli.HGet(lib.Rctx, n.Address, "valid").Result()
 			lib.CheckError(err)
 
 			us := request.Host // Assume our name is what was requested as the URL.
@@ -146,13 +146,13 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 				// The node does have consensus, we'll teach it about the valid
 				// nodes we know.
 				log.Printf("%s has consensus. Propagating our nodes to it...\n", n.Address)
-				nodes, err := lib.RedisCli.Keys("*.onion").Result()
+				nodes, err := lib.RedisCli.Keys(lib.Rctx, "*.onion").Result()
 				lib.CheckError(err)
 				for _, i := range nodes {
 					if i == n.Address {
 						continue
 					}
-					nodedata, err := lib.RedisCli.HGetAll(i).Result()
+					nodedata, err := lib.RedisCli.HGetAll(lib.Rctx, i).Result()
 					lib.CheckError(err)
 					if nodedata["valid"] == "1" {
 						nodemap[i] = nodedata
@@ -163,7 +163,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 				log.Printf("%s does not have consensus. Propagating ourself to it...\n", n.Address)
 				// The node doesn't have consensus in the network. We will only
 				// teach it about ourself.
-				nodedata, err := lib.RedisCli.HGetAll(us).Result()
+				nodedata, err := lib.RedisCli.HGetAll(lib.Rctx, us).Result()
 				lib.CheckError(err)
 				nodemap[us] = nodedata
 				delete(nodemap[us], "secret")
@@ -187,7 +187,7 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 		log.Printf("%s: 2/2 handshake invalid.\n", n.Address)
 		// Delete it all from redis.
 		lib.PublishToRedis("d", n.Address)
-		_, err := lib.RedisCli.Del(n.Address).Result()
+		_, err := lib.RedisCli.Del(lib.Rctx, n.Address).Result()
 		lib.CheckError(err)
 		if err := postback(rw, ret, 400); err != nil {
 			lib.CheckError(err)
@@ -199,12 +199,12 @@ func handlePost(rw http.ResponseWriter, request *http.Request) {
 func pollNodeTTL(interval int64) {
 	for {
 		log.Println("Polling redis for expired nodes")
-		nodes, err := lib.RedisCli.Keys("*.onion").Result()
+		nodes, err := lib.RedisCli.Keys(lib.Rctx, "*.onion").Result()
 		lib.CheckError(err)
 		now := time.Now().Unix()
 
 		for _, i := range nodes {
-			res, err := lib.RedisCli.HGet(i, "lastseen").Result()
+			res, err := lib.RedisCli.HGet(lib.Rctx, i, "lastseen").Result()
 			lib.CheckError(err)
 			lastseen, err := strconv.Atoi(res)
 			lib.CheckError(err)
@@ -213,7 +213,7 @@ func pollNodeTTL(interval int64) {
 			if diff > interval {
 				log.Printf("Deleting %s from redis because of expiration\n", i)
 				lib.PublishToRedis("d", i)
-				lib.RedisCli.Del(i)
+				lib.RedisCli.Del(lib.Rctx, i)
 			}
 		}
 		time.Sleep(time.Duration(interval) * time.Minute)
@@ -240,7 +240,7 @@ func main() {
 	err := os.Chdir(lib.Workdir)
 	lib.CheckError(err)
 
-	if _, err := lib.RedisCli.Ping().Result(); err != nil {
+	if _, err := lib.RedisCli.Ping(lib.Rctx).Result(); err != nil {
 		// We assume redis is not running. Start it up.
 		cmd, err := lib.StartRedis(*redconf)
 		defer cmd.Process.Kill()

@@ -21,6 +21,7 @@ package damlib
  */
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os/exec"
@@ -31,6 +32,9 @@ import (
 
 // RedisAddress points us to our Redis instance.
 const RedisAddress = "127.0.0.1:6379"
+
+// Rctx is the context for Redis
+var Rctx = context.Background()
 
 // RedisCli is our global Redis client
 var RedisCli = redis.NewClient(&redis.Options{
@@ -50,12 +54,12 @@ func StartRedis(conf string) (*exec.Cmd, error) {
 	}
 
 	time.Sleep(500 * time.Millisecond)
-	if _, err := RedisCli.Ping().Result(); err != nil {
+	if _, err := RedisCli.Ping(Rctx).Result(); err != nil {
 		return cmd, err
 	}
 
-	PubSub := RedisCli.Subscribe(PubSubChan)
-	if _, err := PubSub.Receive(); err != nil {
+	PubSub := RedisCli.Subscribe(Rctx, PubSubChan)
+	if _, err := PubSub.Receive(Rctx); err != nil {
 		return cmd, err
 	}
 
@@ -68,7 +72,7 @@ func StartRedis(conf string) (*exec.Cmd, error) {
 func PublishToRedis(mt, address string) {
 	var timestamp, username, modtype, onion, pubstr string
 
-	nodedata, err := RedisCli.HGetAll(address).Result()
+	nodedata, err := RedisCli.HGetAll(Rctx, address).Result()
 	CheckError(err)
 
 	timestamp = nodedata["lastseen"]
@@ -84,5 +88,5 @@ func PublishToRedis(mt, address string) {
 
 	pubstr = fmt.Sprintf("%s|%s|%s|%s", timestamp, username, modtype, onion)
 
-	RedisCli.Publish(PubSubChan, pubstr)
+	RedisCli.Publish(Rctx, PubSubChan, pubstr)
 }
