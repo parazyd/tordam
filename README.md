@@ -14,6 +14,26 @@ Installation
 go get github.com/parazyd/tor-dam
 ```
 
+Usage
+-----
+
+```
+Usage of ./tor-dam:
+  -d string
+        Working directory (default "/home/parazyd/.dam")
+  -e int
+        Node expiry time in minutes (0=unlimited)
+  -g    (Re)generate keys and exit
+  -i int
+        Announce interval (in minutes) (default 5)
+  -n    Don't fetch remote entrypoints
+  -p string
+        Map of ports forwarded to/from Tor (default "13010:13010,13011:13011,5000:5000")
+  -r string
+        Remote list of entrypoints (comma-separated) (default "https://parazyd.org/pub/tmp/tor-dam-dirs.txt")
+  -t    Trust all new nodes automatically
+```
+
 Protocol
 --------
 
