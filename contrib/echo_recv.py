@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019 Dyne.org Foundation
-# tor-dam is written and maintained by Ivan Jelincic <parazyd@dyne.org>
+# Copyright (c) 2017-2021 Ivan Jelincic <parazyd@dyne.org>
 #
 # This file is part of tor-dam
 #
 # This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from argparse import ArgumentParser
 from socket import socket, AF_INET, SOCK_STREAM
 
@@ -28,7 +28,7 @@ s = socket(AF_INET, SOCK_STREAM)
 s.bind((args.listen, args.port))
 s.listen(1)
 
-conn, addr = s.accept()
+conn, ddr = s.accept()
 while 1:
     data = conn.recv(1024)
     if not data:

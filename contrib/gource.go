@@ -1,8 +1,7 @@
 package main
 
 /*
- * Copyright (c) 2018 Dyne.org Foundation
- * tor-dam is written and maintained by Ivan Jelincic <parazyd@dyne.org>
+ * Copyright (c) 2017-2021 Ivan Jelincic <parazyd@dyne.org>
  *
  * This file is part of tor-dam
  *
@@ -21,21 +20,39 @@ package main
  */
 
 import (
+	"context"
+	"flag"
 	"fmt"
-	"os"
+	"log"
 
-	lib "github.com/parazyd/tor-dam/pkg/damlib"
+	"github.com/go-redis/redis"
+)
+
+var (
+	redisAddr = flag.String("-r", "127.0.0.1:39148", "host:port for redis")
+	rctx      = context.Background()
+	rcli      *redis.Client
 )
 
 func main() {
-	pubsub := lib.RedisCli.Subscribe(lib.Rctx, lib.PubSubChan)
-	_, err := pubsub.Receive(lib.Rctx)
-	lib.CheckError(err)
-	fmt.Fprintf(os.Stderr, "Subscribed to %s channel in Redis\n", lib.PubSubChan)
+	flag.Parse()
+
+	rcli = redis.NewClient(&redis.Options{
+		Addr:     *redisAddr,
+		Password: "",
+		DB:       0,
+	})
+
+	// "tordam" is the hardcoded name of the channel
+	pubsub := rcli.Subscribe(rctx, "tordam")
+	_, err := pubsub.Receive(rctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Subscribed to channel in redis")
 
 	ch := pubsub.Channel()
-
-	fmt.Fprintf(os.Stderr, "Listening to messages...\n")
 	for msg := range ch {
 		fmt.Println(msg.Payload)
 	}
