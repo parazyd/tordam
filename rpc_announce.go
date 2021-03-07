@@ -122,6 +122,7 @@ func (Ann) Init(ctx context.Context, vals []string) ([]string, error) {
 	peer.Trusted = 0
 	Peers[onion] = peer
 
+	writePeersDBWithSem(strings.Join([]string{Cfg.Datadir, dbFile}, "/"))
 	return []string{nonce, newrevoke}, nil
 }
 
@@ -193,6 +194,8 @@ func (Ann) Validate(ctx context.Context, vals []string) ([]string, error) {
 	peer.Trusted = 1
 	peer.LastSeen = time.Now().Unix()
 	Peers[onion] = peer
+
+	writePeersDBWithSem(strings.Join([]string{Cfg.Datadir, dbFile}, "/"))
 
 	rpcInfo("ann.Validate", "sending back list of peers to", onion)
 	return ret, nil

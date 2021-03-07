@@ -105,5 +105,7 @@ func AppendPeers(p []string) error {
 		}
 		Peers[i] = Peer{}
 	}
+
+	writePeersDBWithSem(strings.Join([]string{Cfg.Datadir, dbFile}, "/"))
 	return nil
 }
