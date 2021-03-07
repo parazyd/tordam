@@ -40,6 +40,8 @@ func ValidateOnionAddress(addr string) error {
 	return nil
 }
 
+// ValidateOnionInternal takes someunlikelyname.onion:port as a parameter
+// and validates its format.
 func ValidateOnionInternal(onionaddr string) error {
 	splitOnion := strings.Split(onionaddr, ":")
 	if len(splitOnion) != 2 {

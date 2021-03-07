@@ -23,11 +23,11 @@ import (
 
 // Peer is the base struct for any peer in the network.
 type Peer struct {
-	Pubkey     ed25519.PublicKey
-	Portmap    []string
-	Nonce      string
-	SelfRevoke string // Our revoke key we use to update our data
-	PeerRevoke string // Peer's revoke key if they wish to update their data
-	LastSeen   int64
-	Trusted    int // Trusted is int because of possible levels of trust
+	Pubkey     ed25519.PublicKey // Peer's ed25519 public key
+	Portmap    []string          // Peer's port map in Tor
+	Nonce      string            // The nonce to be signed after announce init
+	SelfRevoke string            // Our revoke key we use to update our data
+	PeerRevoke string            // Peer's revoke key if they wish to update their data
+	LastSeen   int64             // Timestamp of last announce
+	Trusted    int               // Trusted is int because of possible levels of trust
 }

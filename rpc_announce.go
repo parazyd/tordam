@@ -26,6 +26,7 @@ import (
 	"time"
 )
 
+// Ann is the struct for the announce JSON-RPC endpoint.
 type Ann struct{}
 
 // Init takes three parameters:

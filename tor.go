@@ -25,6 +25,8 @@ import (
 	"strings"
 )
 
+// newtorrc returns a torrc string that is fed as standard input to the Tor
+// binary for its configuration.
 func newtorrc(listener, torlistener *net.TCPAddr, portmap []string) string {
 	var pm []string
 
@@ -46,6 +48,10 @@ HiddenServicePort %d %s
 		listener.Port, listener.String(), strings.Join(pm, "\n"))
 }
 
+// SpawnTor runs the system's Tor binary with the torrc created by newtorrc.
+// It takes listener (which is the local JSON-RPC server net.TCPAddr),
+// portmap (to map HiddenServicePort entries) and datadir (to store Tor files)
+// as parameters. Returns exec.Cmd pointer and/or error.
 func SpawnTor(listener *net.TCPAddr, portmap []string, datadir string) (*exec.Cmd, error) {
 	var err error
 
