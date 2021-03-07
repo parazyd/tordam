@@ -34,7 +34,8 @@ type Ann struct{}
 // - pubkey: ed25519 public signing key in base64
 // - portmap: List of ports available for communication
 // - (optional) revoke: Revocation key for updating peer info
-//  {"jsonrpc":"2.0",
+//  {
+//   "jsonrpc":"2.0",
 //   "id": 1,
 //   "method": "ann.Init",
 //   "params": ["unlikelynameforan.onion:49371", "214=", "69:420,323:2354"]
@@ -42,7 +43,8 @@ type Ann struct{}
 // Returns:
 // - nonce: A random nonce which is to be signed by the client
 // - revoke: A key which can be used to revoke key and portman and reannounce the peer
-//  {"jsonrpc":"2.0",
+//  {
+//   "jsonrpc":"2.0",
 //   "id":1,
 //   "result": ["somenonce", "somerevokekey"]
 //  }
@@ -126,14 +128,16 @@ func (Ann) Init(ctx context.Context, vals []string) ([]string, error) {
 // Validate takes two parameters:
 // - onion: onionaddress:port where the peer and tordam can be reached
 // - signature: base64 signature of the previously obtained nonce
-//  {"jsonrpc":"2.0",
+//  {
+//   "jsonrpc":"2.0",
 //   "id":2,
 //   "method": "ann.Announce",
 //   "params": ["unlikelynameforan.onion:49371", "deadbeef=="]
 //  }
 // Returns:
 // - peers: A list of known validated peers (max. 50)
-//  {"jsonrpc":"2.0",
+//  {
+//   "jsonrpc":"2.0",
 //   "id":2,
 //   "result": ["unlikelynameforan.onion:69", "yetanother.onion:420"]
 //  }
