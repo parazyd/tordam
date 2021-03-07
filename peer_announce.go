@@ -33,6 +33,8 @@ import (
 // success, it appends the peers received from the endpoint to the global
 // Peers map.
 func Announce(onionaddr string) error {
+	log.Println("Announcing to", onionaddr)
+
 	socks, err := proxy.SOCKS5("tcp", Cfg.TorAddr.String(), nil, proxy.Direct)
 	if err != nil {
 		return err
@@ -79,7 +81,7 @@ func Announce(onionaddr string) error {
 
 	var newPeers []string
 	if err := cli.CallResult(ctx, "ann.Validate",
-		[]string{onionaddr, sig}, &newPeers); err != nil {
+		[]string{Onion, sig}, &newPeers); err != nil {
 		return err
 	}
 
