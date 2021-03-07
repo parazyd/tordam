@@ -7,6 +7,7 @@ A library for peer discovery inside the Tor network.
 
 ![Build Status](https://github.com/parazyd/tordam/actions/workflows/go.yml/badge.svg)
 [![Go Reference](https://pkg.go.dev/badge/github.com/parazyd/tordam.svg)](https://pkg.go.dev/github.com/parazyd/tordam)
+[![Go Report Card](https://goreportcard.com/badge/github.com/parazyd/tordam)](https://goreportcard.com/report/github.com/parazyd/tordam)
 
 Installation
 ------------
