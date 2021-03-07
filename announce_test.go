@@ -37,7 +37,7 @@ func TestAnnounce(t *testing.T) {
 		"12345:54321,666:3521",
 	}
 
-	ret, err := ann.Init(ann{}, context.Background(), vals)
+	ret, err := Ann.Init(Ann{}, context.Background(), vals)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestAnnounce(t *testing.T) {
 		base64.StdEncoding.EncodeToString(ed25519.Sign(sk, []byte(ret[0]))),
 	}
 
-	ret, err = ann.Validate(ann{}, context.Background(), vals)
+	ret, err = Ann.Validate(Ann{}, context.Background(), vals)
 	if err != nil {
 		t.Fatal(err)
 	}

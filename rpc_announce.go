@@ -26,7 +26,7 @@ import (
 	"time"
 )
 
-type ann struct{}
+type Ann struct{}
 
 // Init takes three parameters:
 // - onion: onionaddress:port where the peer and tordam can be reached
@@ -46,7 +46,7 @@ type ann struct{}
 //   "result": ["somenonce", "somerevokekey"]
 //  }
 // On any kind of failure returns an error and the reason.
-func (ann) Init(ctx context.Context, vals []string) ([]string, error) {
+func (Ann) Init(ctx context.Context, vals []string) ([]string, error) {
 	if len(vals) != 3 && len(vals) != 4 {
 		return nil, errors.New("invalid parameters")
 	}
@@ -137,7 +137,7 @@ func (ann) Init(ctx context.Context, vals []string) ([]string, error) {
 //   "result": ["unlikelynameforan.onion:69", "yetanother.onion:420"]
 //  }
 // On any kind of failure returns an error and the reason.
-func (ann) Validate(ctx context.Context, vals []string) ([]string, error) {
+func (Ann) Validate(ctx context.Context, vals []string) ([]string, error) {
 	if len(vals) != 2 {
 		return nil, errors.New("invalid parameters")
 	}

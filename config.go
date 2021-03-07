@@ -24,12 +24,10 @@ import (
 
 // Config is the configuration structure, to be filled by library user.
 type Config struct {
-	Listen   *net.TCPAddr // Local listen address for the JSON-RPC server
-	TorAddr  *net.TCPAddr // Tor SOCKS5 proxy address, filled by SpawnTor()
-	Datadir  string       // Path to data directory
-	Portmap  []string     // The peer's portmap, to be mapped in the Tor HS
-	Seeds    []string     // Initial peer(s)
-	Announce bool         // Announce or not
+	Listen  *net.TCPAddr // Local listen address for the JSON-RPC server
+	TorAddr *net.TCPAddr // Tor SOCKS5 proxy address, filled by SpawnTor()
+	Datadir string       // Path to data directory
+	Portmap []string     // The peer's portmap, to be mapped in the Tor HS
 }
 
 // SignKey is an ed25519 private key, to be assigned by library user.
