@@ -21,6 +21,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -41,7 +42,7 @@ var (
 	generate = flag.Bool("g", false, "(Re)generate keys and exit")
 	portmap  = flag.String("m", "13010:13010,13011:13011", "Map of ports forwarded to/from Tor")
 	listen   = flag.String("l", "127.0.0.1:49371", "Local listen address")
-	datadir  = flag.String("datadir", os.Getenv("HOME")+"/.dam", "Data directory")
+	datadir  = flag.String("d", os.Getenv("HOME")+"/.dam", "Data directory")
 	seeds    = flag.String("s",
 		"p7qaewjgnvnaeihhyybmoofd5avh665kr3awoxlh5rt6ox743kjdr6qd.onion:49371",
 		"List of initial peers (comma-separated)")
@@ -181,8 +182,14 @@ func main() {
 	wg.Wait()
 
 	if succ < 1 {
-		log.Fatal("No successful announces.")
+		log.Println("No successful announces.")
 	} else {
 		log.Printf("Successfully announced to %d peers.", succ)
 	}
+
+	j, err := json.Marshal(tordam.Peers)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(string(j))
 }
