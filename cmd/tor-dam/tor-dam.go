@@ -170,7 +170,7 @@ func main() {
 	for _, i := range strings.Split(*seeds, ",") {
 		wg.Add(1)
 		go func(x string) {
-			if err := tordam.Announce(i); err != nil {
+			if err := tordam.Announce(x); err != nil {
 				log.Println("error in announce:", err)
 			} else {
 				succ++
