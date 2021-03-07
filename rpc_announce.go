@@ -55,7 +55,7 @@ func (ann) Init(ctx context.Context, vals []string) ([]string, error) {
 	pubkey := vals[1]
 	portmap := strings.Split(vals[2], ",")
 
-	if err := validateOnionInternal(onion); err != nil {
+	if err := ValidateOnionInternal(onion); err != nil {
 		rpcWarn("ann.Init", err.Error())
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (ann) Validate(ctx context.Context, vals []string) ([]string, error) {
 	onion := vals[0]
 	signature := vals[1]
 
-	if err := validateOnionInternal(onion); err != nil {
+	if err := ValidateOnionInternal(onion); err != nil {
 		rpcWarn("ann.Validate", err.Error())
 		return nil, err
 	}

@@ -97,7 +97,7 @@ func AppendPeers(p []string) error {
 		if _, ok := Peers[i]; ok {
 			continue
 		}
-		if err := validateOnionInternal(i); err != nil {
+		if err := ValidateOnionInternal(i); err != nil {
 			log.Printf("warning: received garbage peer (%v)", err)
 			continue
 		}

@@ -40,7 +40,7 @@ func ValidateOnionAddress(addr string) error {
 	return nil
 }
 
-func validateOnionInternal(onionaddr string) error {
+func ValidateOnionInternal(onionaddr string) error {
 	splitOnion := strings.Split(onionaddr, ":")
 	if len(splitOnion) != 2 {
 		return errors.New("onion address doesn't contain a port")

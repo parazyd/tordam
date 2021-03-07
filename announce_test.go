@@ -57,7 +57,7 @@ func TestAnnounce(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, i := range ret {
-		if err := validateOnionInternal(i); err != nil {
+		if err := ValidateOnionInternal(i); err != nil {
 			t.Fatal(err)
 		}
 	}
