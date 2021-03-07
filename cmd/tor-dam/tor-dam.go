@@ -22,6 +22,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -104,7 +105,7 @@ func main() {
 	// Validate and assign the local listening address
 	tordam.Cfg.Listen, err = net.ResolveTCPAddr("tcp", *listen)
 	if err != nil {
-		log.Fatal("invalid listen address: %s (%v)", *listen, err)
+		log.Fatalf("invalid listen address: %s (%v)", *listen, err)
 	}
 
 	// Assign the global tordam data directory
@@ -136,7 +137,7 @@ func main() {
 	}
 	onionaddr = []byte(strings.TrimSuffix(string(onionaddr), "\n"))
 	tordam.Onion = strings.Join([]string{
-		string(onionaddr), string(tordam.Cfg.Listen.Port)}, ":")
+		string(onionaddr), fmt.Sprint(tordam.Cfg.Listen.Port)}, ":")
 	log.Println("Our onion address is:", tordam.Onion)
 
 	// Start the JSON-RPC server with announce endpoints.
