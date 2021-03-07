@@ -25,7 +25,7 @@ import (
 	"strings"
 )
 
-// ValidateOnionAddresses checks if the given string is a valid Tor v3 Hidden
+// ValidateOnionAddress checks if the given string is a valid Tor v3 Hidden
 // service address. Returns error if not.
 func ValidateOnionAddress(addr string) error {
 	aupp := strings.ToUpper(strings.TrimSuffix(addr, ".onion"))
