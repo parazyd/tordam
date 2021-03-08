@@ -40,10 +40,11 @@ import (
 
 var (
 	generate = flag.Bool("g", false, "(Re)generate keys and exit")
-	portmap  = flag.String("m", "13010:13010,13011:13011", "Map of ports forwarded to/from Tor")
-	listen   = flag.String("l", "127.0.0.1:49371", "Local listen address")
-	datadir  = flag.String("d", os.Getenv("HOME")+"/.dam", "Data directory")
-	seeds    = flag.String("s",
+	portmap  = flag.String("m", "13010:13010,13011:13011",
+		"Map of ports forwarded to/from Tor")
+	listen  = flag.String("l", "127.0.0.1:49371", "Local listen address")
+	datadir = flag.String("d", os.Getenv("HOME")+"/.dam", "Data directory")
+	seeds   = flag.String("s",
 		"p7qaewjgnvnaeihhyybmoofd5avh665kr3awoxlh5rt6ox743kjdr6qd.onion:49371",
 		"List of initial peers (comma-separated)")
 	noannounce = flag.Bool("n", false, "Do not announce to peers")
@@ -78,7 +79,7 @@ func loadED25519Seed(file string) (ed25519.PrivateKey, error) {
 	return ed25519.NewKeyFromSeed(dec), nil
 }
 
-// main here is the reference workflow of tor-dam's peer discovery. It's steps
+// main here is the reference workflow of tor-dam's peer discovery. Its steps
 // are commented and implement a generic way of using the tordam library.
 func main() {
 	flag.Parse()
