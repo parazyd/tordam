@@ -78,23 +78,19 @@ func loadED25519Seed(file string) (ed25519.PrivateKey, error) {
 	return ed25519.NewKeyFromSeed(dec), nil
 }
 
+// main here is the reference workflow of tor-dam's peer discovery. It's steps
+// are commented and implement a generic way of using the tordam library.
 func main() {
 	flag.Parse()
 	var wg sync.WaitGroup
 	var err error
 
+	// Generate the ed25519 keypair used for signing and validating
 	if *generate {
 		if err := generateED25519Keypair(*datadir); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)
-	}
-
-	// Validate given seeds
-	for _, i := range strings.Split(*seeds, ",") {
-		if err := tordam.ValidateOnionInternal(i); err != nil {
-			log.Fatalf("invalid seed %s (%v)", i, err)
-		}
 	}
 
 	// Assign portmap to tordam Cfg global and validate it
@@ -142,16 +138,16 @@ func main() {
 	log.Println("Our onion address is:", tordam.Onion)
 
 	// Start the JSON-RPC server with announce endpoints.
-	// This is done in the library user rather than internally in the library
+	// This is done in the program rather than internally in the library
 	// because it is more useful and easier to add additional JSON-RPC
-	// endpoints to the same server.
+	// endpoints to the same server if necessary.
 	l, err := net.Listen(jrpc2.Network(tordam.Cfg.Listen.String()),
 		tordam.Cfg.Listen.String())
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer l.Close()
-	// Endpoints are assigned here
+	// JSON-RPC endpoints are assigned here
 	assigner := handler.ServiceMap{
 		// "ann" is the JSON-RPC endpoint for peer discovery/announcement
 		"ann": handler.NewService(tordam.Ann{}),
@@ -164,6 +160,13 @@ func main() {
 		// We shall sit here and wait
 		wg.Add(1)
 		wg.Wait()
+	}
+
+	// Validate given seeds
+	for _, i := range strings.Split(*seeds, ",") {
+		if err := tordam.ValidateOnionInternal(i); err != nil {
+			log.Fatalf("invalid seed %s (%v)", i, err)
+		}
 	}
 
 	// Announce to initial seeds
@@ -187,9 +190,8 @@ func main() {
 		log.Printf("Successfully announced to %d peers.", succ)
 	}
 
-	j, err := json.Marshal(tordam.Peers)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Marshal the global Peers map to JSON and print it out.
+	// Internally, the db is also saved (written to a file) in the datadir.
+	j, _ := json.Marshal(tordam.Peers)
 	log.Println(string(j))
 }
