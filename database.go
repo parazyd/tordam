@@ -24,7 +24,8 @@ import (
 )
 
 // WritePeersDB marshals the Peers global to JSON and writes to given file.
-// Please note that this should be probably used in conjuction with a semaphore.
+// Please note that this should be probably used in conjunction with some sort
+// of semaphore.
 func WritePeersDB(file string) error {
 	j, err := json.Marshal(Peers)
 	if err != nil {
