@@ -23,7 +23,7 @@ import (
 	"fmt"
 )
 
-// RandomGarbage returns a base64 encoded string of n bytes.
+// RandomGarbage returns a base64 encoded string of n bytes of entropy.
 func RandomGarbage(n int) (string, error) {
 	garbage := make([]byte, n)
 	read, err := rand.Read(garbage)

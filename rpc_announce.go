@@ -42,7 +42,7 @@ type Ann struct{}
 //  }
 // Returns:
 // - nonce: A random nonce which is to be signed by the client
-// - revoke: A key which can be used to revoke key and portman and reannounce the peer
+// - revoke: A key which can be used to revoke key and portmap and reannounce the peer
 //  {
 //   "jsonrpc":"2.0",
 //   "id":1,

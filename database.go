@@ -35,8 +35,8 @@ func WritePeersDB(file string) error {
 }
 
 // writePeersDBWithSem is an internal function to call WritePeersDB safely
-// using an internal semafore. Programs using this library should probably
-// implement something similar.
+// using an internal semaphore. Programs using this library should probably
+// implement something similar if they want to write Peers to a file.
 func writePeersDBWithSem(file string) {
 	if err := dbSem.Acquire(dbSemCtx, 1); err != nil {
 		log.Println("warning: failed to acquire sem for writing:", err)

@@ -29,9 +29,9 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-// Announce is the function that announces to a certain onion address. Upon
+// Announce is a function that announces to a certain onion address. Upon
 // success, it appends the peers received from the endpoint to the global
-// Peers map.
+// Peers map, which in turn also writes it to the peers db file.
 func Announce(onionaddr string) error {
 	log.Println("Announcing to", onionaddr)
 
@@ -59,7 +59,7 @@ func Announce(onionaddr string) error {
 
 	if peer, ok := Peers[onionaddr]; ok {
 		// Here the implication is that it's not our first announce, so we
-		// have received a revoke key to use in subsequent announces.
+		// should have received a revoke key to use for a subsequent announce.
 		data = append(data, peer.SelfRevoke)
 	}
 
@@ -91,7 +91,8 @@ func Announce(onionaddr string) error {
 // AppendPeers appends given []string peers to the global Peers map. Usually
 // received by validating ourself to a peer and them replying with a list of
 // their valid peers. If a peer is not in format of "unlikelyname.onion:port",
-// they will not be appended.
+// they will not be appended. When done, the function also writes the Peers
+// struct as a JSON file in the Datadir.
 // As a placeholder, this function can return an error, but it has no reason
 // to do so right now.
 func AppendPeers(p []string) error {
