@@ -26,3 +26,5 @@ services in the Tor network with simple mechanisms.
 
 A basic integration example can be found and reviewed in the form of
 a single go file: [cmd/tor-dam/tor-dam.go](cmd/tor-dam/tor-dam.go).
+
+Most of the library's code is documented in the source, along with godoc.
