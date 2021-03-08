@@ -22,6 +22,8 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -30,6 +32,12 @@ func TestAnnounce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	Cfg.Datadir = os.Getenv("TMPDIR")
+	if Cfg.Datadir == "" {
+		Cfg.Datadir = "/tmp"
+	}
+	defer os.Remove(strings.Join([]string{Cfg.Datadir, dbFile}, "/"))
 
 	vals := []string{
 		"p7qaewjgnvnaeihhyybmoofd5avh665kr3awoxlh5rt6ox743kjdr6qd.onion:666",
