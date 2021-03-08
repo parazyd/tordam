@@ -35,6 +35,10 @@ import (
 func Announce(onionaddr string) error {
 	log.Println("Announcing to", onionaddr)
 
+	if err := ValidateOnionInternal(onionaddr); err != nil {
+		return err
+	}
+
 	socks, err := proxy.SOCKS5("tcp", Cfg.TorAddr.String(), nil, proxy.Direct)
 	if err != nil {
 		return err
