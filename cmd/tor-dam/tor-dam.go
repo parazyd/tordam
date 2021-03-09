@@ -119,7 +119,11 @@ func main() {
 	// Spawn Tor daemon and let it settle
 	tor, err := tordam.SpawnTor(tordam.Cfg.Listen, tordam.Cfg.Portmap,
 		tordam.Cfg.Datadir)
-	defer tor.Process.Kill()
+	defer func() {
+		if err := tor.Process.Kill(); err != nil {
+			log.Println(err)
+		}
+	}()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -153,7 +157,11 @@ func main() {
 		// "ann" is the JSON-RPC endpoint for peer discovery/announcement
 		"ann": handler.NewService(tordam.Ann{}),
 	}
-	go server.Loop(l, server.NewStatic(assigner), nil)
+	go func() {
+		if err := server.Loop(l, server.NewStatic(assigner), nil); err != nil {
+			log.Println(err)
+		}
+	}()
 	log.Println("Started JSON-RPC server on", tordam.Cfg.Listen.String())
 
 	// If decided to not announce to anyone

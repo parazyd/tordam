@@ -28,7 +28,11 @@ func TestSpawnTor(t *testing.T) {
 		t.Fatal(err)
 	}
 	tor, err := SpawnTor(l, []string{"1234:1234"}, "tor_test")
-	defer tor.Process.Kill()
+	defer func() {
+		if err := tor.Process.Kill(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	defer os.RemoveAll("tor_test")
 	if err != nil {
 		t.Fatal(err)
