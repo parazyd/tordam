@@ -22,6 +22,7 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"log"
+	"path/filepath"
 	"strings"
 
 	"github.com/creachadair/jrpc2"
@@ -111,6 +112,6 @@ func AppendPeers(p []string) error {
 		Peers[i] = Peer{}
 	}
 
-	writePeersDBWithSem(strings.Join([]string{Cfg.Datadir, dbFile}, "/"))
+	writePeersDBWithSem(filepath.Join(Cfg.Datadir, dbFile))
 	return nil
 }

@@ -28,6 +28,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -50,6 +51,8 @@ var (
 	noannounce = flag.Bool("n", false, "Do not announce to peers")
 )
 
+// generateED25519Keypair is a helper function to generate it, and save the
+// seed to a file for later reuse.
 func generateED25519Keypair(dir string) error {
 	_, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -59,12 +62,14 @@ func generateED25519Keypair(dir string) error {
 		return err
 	}
 
-	seedpath := strings.Join([]string{dir, "ed25519.seed"}, "/")
+	seedpath := filepath.Join(dir, "ed25519.seed")
 	log.Println("Writing ed25519 key seed to", seedpath)
 	return ioutil.WriteFile(seedpath,
 		[]byte(base64.StdEncoding.EncodeToString(sk.Seed())), 0600)
 }
 
+// loadED25519Seed is a helper function to read an existing key seed and
+// return an ed25519.PrivateKey.
 func loadED25519Seed(file string) (ed25519.PrivateKey, error) {
 	log.Println("Reading ed25519 seed from", file)
 
@@ -86,9 +91,12 @@ func main() {
 	var wg sync.WaitGroup
 	var err error
 
+	// Assign the global tordam data directory
+	tordam.Cfg.Datadir = *datadir
+
 	// Generate the ed25519 keypair used for signing and validating
 	if *generate {
-		if err := generateED25519Keypair(*datadir); err != nil {
+		if err := generateED25519Keypair(tordam.Cfg.Datadir); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)
@@ -106,12 +114,9 @@ func main() {
 		log.Fatalf("invalid listen address: %s (%v)", *listen, err)
 	}
 
-	// Assign the global tordam data directory
-	tordam.Cfg.Datadir = *datadir
-
 	// Load the ed25519 signing key into the tordam global
-	tordam.SignKey, err = loadED25519Seed(strings.Join(
-		[]string{*datadir, "ed25519.seed"}, "/"))
+	tordam.SignKey, err = loadED25519Seed(
+		filepath.Join(tordam.Cfg.Datadir, "ed25519.seed"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -132,8 +137,8 @@ func main() {
 
 	// Read the onion hostname from the datadir and map it into the
 	// global tordam.Onion variable
-	onionaddr, err := ioutil.ReadFile(strings.Join([]string{
-		tordam.Cfg.Datadir, "hs", "hostname"}, "/"))
+	onionaddr, err := ioutil.ReadFile(
+		filepath.Join(tordam.Cfg.Datadir, "hs", "hostname"))
 	if err != nil {
 		log.Fatal(err)
 	}
