@@ -20,9 +20,8 @@ package tordam
 import (
 	"log"
 	"os"
-	"path/filepath"
+	"path"
 	"runtime"
-	"strings"
 )
 
 var (
@@ -35,25 +34,18 @@ var (
 // It should be called from programs using the library, with something like:
 //  tordam.LogInit(os.Stdout)
 func LogInit(f *os.File) {
-	inte = log.New(f, "(tordam) INTERNAL ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
-	warn = log.New(f, "(tordam) WARNING: ", log.Ldate|log.Ltime)
-	info = log.New(f, "(tordam) INFO: ", log.Ldate|log.Ltime)
+	inte = log.New(f, "INTERNAL ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+	warn = log.New(f, "WARNING: ", log.Ldate|log.Ltime)
+	info = log.New(f, "INFO: ", log.Ldate|log.Ltime)
 }
 
 func fname() string {
 	pc, _, _, _ := runtime.Caller(2)
-	fn := runtime.FuncForPC(pc)
-
-	var fnName string
-
-	if fn == nil {
-		fnName = "?()"
+	if fn := runtime.FuncForPC(pc); fn != nil {
+		return path.Base(fn.Name()) + "()"
 	} else {
-		dotName := filepath.Ext(fn.Name())
-		fnName = strings.TrimLeft(dotName, ".") + "()"
+		return "?()"
 	}
-
-	return fnName
 }
 
 func rpcWarn(msg string) {
