@@ -18,11 +18,8 @@
 package tordam
 
 import (
-	"context"
 	"crypto/ed25519"
 	"net"
-
-	"golang.org/x/sync/semaphore"
 )
 
 // Config is the configuration structure, to be filled by library user.
@@ -45,12 +42,3 @@ var Cfg = Config{}
 
 // Peers is the global map of peers
 var Peers = map[string]Peer{}
-
-// dbSem is the internal semaphore for writing the peer db
-var dbSem = semaphore.NewWeighted(1)
-
-// dbSemCtx is the context for dbSem
-var dbSemCtx = context.Background()
-
-// dbFile is the filename for the Peers JSON database
-var dbFile = "peers.json"

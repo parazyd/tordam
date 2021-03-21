@@ -22,7 +22,6 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"log"
-	"path/filepath"
 	"strings"
 
 	"github.com/creachadair/jrpc2"
@@ -96,8 +95,7 @@ func Announce(onionaddr string) error {
 // AppendPeers appends given []string peers to the global Peers map. Usually
 // received by validating ourself to a peer and them replying with a list of
 // their valid peers. If a peer is not in format of "unlikelyname.onion:port",
-// they will not be appended. When done, the function also writes the Peers
-// struct as a JSON file in the Datadir.
+// they will not be appended.
 // As a placeholder, this function can return an error, but it has no reason
 // to do so right now.
 func AppendPeers(p []string) error {
@@ -112,6 +110,5 @@ func AppendPeers(p []string) error {
 		Peers[i] = Peer{}
 	}
 
-	writePeersDBWithSem(filepath.Join(Cfg.Datadir, dbFile))
 	return nil
 }

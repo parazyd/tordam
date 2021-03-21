@@ -205,7 +205,6 @@ func main() {
 	}
 
 	// Marshal the global Peers map to JSON and print it out.
-	// Internally, the db is also saved (written to a file) in the datadir.
 	j, _ := json.Marshal(tordam.Peers)
 	log.Println(string(j))
 }
