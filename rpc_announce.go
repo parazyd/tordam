@@ -22,6 +22,7 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -59,11 +60,11 @@ func (Ann) Init(ctx context.Context, vals []string) ([]string, error) {
 	portmap := strings.Split(vals[2], ",")
 
 	if err := ValidateOnionInternal(onion); err != nil {
-		rpcWarn("ann.Init", err.Error())
+		rpcWarn(err.Error())
 		return nil, err
 	}
 
-	rpcInfo("ann.Init", "got request for", onion)
+	rpcInfo(fmt.Sprintf("got request for %s", onion))
 
 	var peer Peer
 	reallySeen := false
@@ -78,39 +79,39 @@ func (Ann) Init(ctx context.Context, vals []string) ([]string, error) {
 	if reallySeen {
 		// Peer announced to us before
 		if len(vals) != 4 {
-			rpcWarn("ann.Init", "no revocation key provided")
+			rpcWarn("no revocation key provided")
 			return nil, errors.New("no revocation key provided")
 		}
 		revoke := vals[3]
 		if strings.Compare(revoke, peer.PeerRevoke) != 0 {
-			rpcWarn("ann.Init", "revocation key doesn't match")
+			rpcWarn("revocation key doesn't match")
 			return nil, errors.New("revocation key doesn't match")
 		}
 	}
 
 	pk, err := base64.StdEncoding.DecodeString(pubkey)
 	if err != nil {
-		rpcWarn("ann.Init", "got invalid base64 public key")
+		rpcWarn("got invalid base64 public key")
 		return nil, errors.New("invalid base64 public key")
 	} else if len(pk) != 32 {
-		rpcWarn("ann.Init", "got invalid pubkey (len != 32)")
+		rpcWarn("got invalid pubkey (len != 32)")
 		return nil, errors.New("invalid public key")
 	}
 
 	if err := ValidatePortmap(portmap); err != nil {
-		rpcWarn("ann.Init", err.Error())
+		rpcWarn(err.Error())
 		return nil, err
 	}
 
 	nonce, err := RandomGarbage(32)
 	if err != nil {
-		rpcInternalErr("ann.Init", err.Error())
+		rpcInternalErr(err.Error())
 		return nil, errors.New("internal error")
 	}
 
 	newrevoke, err := RandomGarbage(128)
 	if err != nil {
-		rpcInternalErr("ann.Init", err.Error())
+		rpcInternalErr(err.Error())
 		return nil, errors.New("internal error")
 	}
 
@@ -151,36 +152,36 @@ func (Ann) Validate(ctx context.Context, vals []string) ([]string, error) {
 	signature := vals[1]
 
 	if err := ValidateOnionInternal(onion); err != nil {
-		rpcWarn("ann.Validate", err.Error())
+		rpcWarn(err.Error())
 		return nil, err
 	}
 
-	rpcInfo("ann.Validate", "got request for", onion)
+	rpcInfo(fmt.Sprintf("got request for %s", onion))
 
 	peer, ok := Peers[onion]
 	if !ok {
-		rpcWarn("ann.Validate", onion, "not in peer map")
+		rpcWarn(fmt.Sprintf("%s not in peer map", onion))
 		return nil, errors.New("this onion was not seen before")
 	}
 
 	if peer.Pubkey == nil || peer.Nonce == "" {
-		rpcWarn("ann.Validate", onion, "tried to validate before init")
+		rpcWarn(fmt.Sprintf("%s tried to validate before init", onion))
 		return nil, errors.New("tried to validate before init")
 	}
 
 	sig, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
-		rpcWarn("ann.Validate", "invalid base64 signature string")
+		rpcWarn("invalid base64 signature string")
 		return nil, errors.New("invalid base64 signature string")
 	}
 
 	if !ed25519.Verify(peer.Pubkey, []byte(peer.Nonce), sig) {
-		rpcWarn("ann.Validate", "signature verification failed")
+		rpcWarn("signature verification failed")
 		// delete(Peers, onion)
 		return nil, errors.New("signature verification failed")
 	}
 
-	rpcInfo("ann.Validate", "validation success for", onion)
+	rpcInfo(fmt.Sprintf("validation success for %s", onion))
 
 	var ret []string
 	for addr, data := range Peers {
@@ -194,6 +195,6 @@ func (Ann) Validate(ctx context.Context, vals []string) ([]string, error) {
 	peer.LastSeen = time.Now().Unix()
 	Peers[onion] = peer
 
-	rpcInfo("ann.Validate", "sending back list of peers to", onion)
+	rpcInfo(fmt.Sprintf("sending back list of peers to %s", onion))
 	return ret, nil
 }

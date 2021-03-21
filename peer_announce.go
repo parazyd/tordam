@@ -21,7 +21,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/base64"
-	"log"
+	"fmt"
 	"strings"
 
 	"github.com/creachadair/jrpc2"
@@ -33,7 +33,7 @@ import (
 // success, it appends the peers received from the endpoint to the global
 // Peers map, which in turn also writes it to the peers db file.
 func Announce(onionaddr string) error {
-	log.Println("Announcing to", onionaddr)
+	rpcInfo(fmt.Sprintf("Announcing to %s", onionaddr))
 
 	if err := ValidateOnionInternal(onionaddr); err != nil {
 		return err
@@ -104,7 +104,7 @@ func AppendPeers(p []string) error {
 			continue
 		}
 		if err := ValidateOnionInternal(i); err != nil {
-			log.Printf("warning: received garbage peer (%v)", err)
+			rpcWarn(fmt.Sprintf("received garbage peer (%v)", err))
 			continue
 		}
 		Peers[i] = Peer{}

@@ -19,18 +19,51 @@ package tordam
 
 import (
 	"log"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 )
 
-func rpcWarn(msg ...string) {
-	text := strings.Join(msg[1:], " ")
-	log.Printf("RPC warning: (%s) %s", msg[0], text)
+var (
+	inte *log.Logger
+	warn *log.Logger
+	info *log.Logger
+)
+
+// LogInit is the initializer for the internal tordam logging functions.
+// It should be called from programs using the library, with something like:
+//  tordam.LogInit(os.Stdout)
+func LogInit(f *os.File) {
+	inte = log.New(f, "(tordam) INTERNAL ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+	warn = log.New(f, "(tordam) WARNING: ", log.Ldate|log.Ltime)
+	info = log.New(f, "(tordam) INFO: ", log.Ldate|log.Ltime)
 }
-func rpcInfo(msg ...string) {
-	text := strings.Join(msg[1:], " ")
-	log.Printf("RPC info: (%s) %s", msg[0], text)
+
+func fname() string {
+	pc, _, _, _ := runtime.Caller(2)
+	fn := runtime.FuncForPC(pc)
+
+	var fnName string
+
+	if fn == nil {
+		fnName = "?()"
+	} else {
+		dotName := filepath.Ext(fn.Name())
+		fnName = strings.TrimLeft(dotName, ".") + "()"
+	}
+
+	return fnName
 }
-func rpcInternalErr(msg ...string) {
-	text := strings.Join(msg[1:], " ")
-	log.Printf("RPC internal error: (%s) %s", msg[0], text)
+
+func rpcWarn(msg string) {
+	warn.Printf("%s: %s", fname(), msg)
+}
+
+func rpcInfo(msg string) {
+	info.Printf("%s: %s", fname(), msg)
+}
+
+func rpcInternalErr(msg string) {
+	inte.Printf("%s: %s", fname(), msg)
 }

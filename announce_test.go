@@ -33,6 +33,7 @@ func TestAnnounce(t *testing.T) {
 	}
 
 	Cfg.Datadir = os.TempDir()
+	LogInit(os.Stdout)
 
 	vals := []string{
 		"p7qaewjgnvnaeihhyybmoofd5avh665kr3awoxlh5rt6ox743kjdr6qd.onion:666",

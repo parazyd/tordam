@@ -91,6 +91,9 @@ func main() {
 	var wg sync.WaitGroup
 	var err error
 
+	// Initialize tordam logger
+	tordam.LogInit(os.Stdout)
+
 	// Assign the global tordam data directory
 	tordam.Cfg.Datadir = *datadir
 
