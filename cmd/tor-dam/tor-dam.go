@@ -209,5 +209,5 @@ func main() {
 
 	// Marshal the global Peers map to JSON and print it out.
 	j, _ := json.Marshal(tordam.Peers)
-	log.Println(string(j))
+	fmt.Println(string(j))
 }
