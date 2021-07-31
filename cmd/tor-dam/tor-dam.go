@@ -161,12 +161,16 @@ func main() {
 	}
 	defer l.Close()
 	// JSON-RPC endpoints are assigned here
+	var a tordam.Ann
 	assigner := handler.ServiceMap{
 		// "ann" is the JSON-RPC endpoint for peer discovery/announcement
-		"ann": handler.NewService(tordam.Ann{}),
+		"ann": handler.Map{
+			"Init":     handler.New(a.Init),
+			"Validate": handler.New(a.Validate),
+		},
 	}
 	go func() {
-		if err := server.Loop(l, server.NewStatic(assigner), nil); err != nil {
+		if err := server.Loop(l, server.Static(assigner), nil); err != nil {
 			log.Println(err)
 		}
 	}()
