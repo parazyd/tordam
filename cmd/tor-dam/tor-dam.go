@@ -154,8 +154,7 @@ func main() {
 	// This is done in the program rather than internally in the library
 	// because it is more useful and easier to add additional JSON-RPC
 	// endpoints to the same server if necessary.
-	l, err := net.Listen(jrpc2.Network(tordam.Cfg.Listen.String()),
-		tordam.Cfg.Listen.String())
+	l, err := net.Listen(jrpc2.Network(tordam.Cfg.Listen.String()))
 	if err != nil {
 		log.Fatal(err)
 	}
