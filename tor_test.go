@@ -19,10 +19,14 @@ package tordam
 
 import (
 	"os"
+	"os/exec"
 	"testing"
 )
 
 func TestSpawnTor(t *testing.T) {
+	if _, err := exec.LookPath("tor"); err != nil {
+		t.Skipf("This test cannot be run: %v", err)
+	}
 	l, err := GetAvailableListener()
 	if err != nil {
 		t.Fatal(err)
