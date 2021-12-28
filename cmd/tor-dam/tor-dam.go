@@ -18,6 +18,7 @@
 package main
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
@@ -34,6 +35,7 @@ import (
 	"time"
 
 	"github.com/creachadair/jrpc2"
+	"github.com/creachadair/jrpc2/channel"
 	"github.com/creachadair/jrpc2/handler"
 	"github.com/creachadair/jrpc2/server"
 	"github.com/parazyd/tordam"
@@ -169,7 +171,8 @@ func main() {
 		},
 	}
 	go func() {
-		if err := server.Loop(l, server.Static(assigner), nil); err != nil {
+		acc := server.NetAccepter(l, channel.RawJSON)
+		if err := server.Loop(context.TODO(), acc, server.Static(assigner), nil); err != nil {
 			log.Println(err)
 		}
 	}()
